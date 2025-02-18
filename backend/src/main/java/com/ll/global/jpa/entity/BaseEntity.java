@@ -11,7 +11,6 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@SuperBuilder
 @NoArgsConstructor
 @MappedSuperclass
 public abstract class BaseEntity {
@@ -19,7 +18,7 @@ public abstract class BaseEntity {
     @GeneratedValue(strategy = IDENTITY) // AUTO_INCREMENT
     @Setter(AccessLevel.PROTECTED)
     @EqualsAndHashCode.Include
-    private Long id;
+    public Long id;
 
     public String getModelName() {
         String simpleName = this.getClass().getSimpleName();

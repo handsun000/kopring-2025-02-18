@@ -34,13 +34,13 @@ public class PostService {
     }
 
     public Post write(Member author, String title, String content, boolean published, boolean listed) {
-        Post post = Post.builder()
-                .author(author)
-                .title(title)
-                .content(content)
-                .published(published)
-                .listed(listed)
-                .build();
+        Post post = new Post(
+                author,
+                title,
+                content,
+                published,
+                listed
+        );
 
         return postRepository.save(post);
     }

@@ -94,6 +94,8 @@ public class CustomAuthenticationFilter extends OncePerRequestFilter {
         if (member != null)
             rq.setLogin(member);
 
+        System.out.println("member = " + member);
+
         filterChain.doFilter(request, response);
     }
 }

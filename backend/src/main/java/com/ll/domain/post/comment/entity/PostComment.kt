@@ -8,43 +8,43 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
 @Entity
-@Getter
-@SuperBuilder
-@NoArgsConstructor
-public class PostComment extends BaseTime {
+class PostComment : BaseTime {
     @ManyToOne(fetch = FetchType.LAZY)
-    private Post post;
+    lateinit var post: Post
 
     @ManyToOne(fetch = FetchType.LAZY)
-    private Member author;
+    lateinit var author: Member
 
     @Column(columnDefinition = "TEXT")
-    private String content;
+    lateinit var content: String
 
-    public void modify(String content) {
+    constructor(post: Post, author: Member, content: String) {
+        this.post = post;
+        this.author = author;
         this.content = content;
     }
 
-    public void checkActorCanModify(Member actor) {
-        if (actor == null) throw new ServiceException("401-1", "로그인 후 이용해주세요.");
-
-        if (actor.equals(author)) return;
-
-        throw new ServiceException("403-2", "작성자만 댓글을 수정할 수 있습니다.");
+    fun modify(content: String) {
+        this.content = content;
     }
 
-    public void checkActorCanDelete(Member actor) {
-        if (actor == null) throw new ServiceException("401-1", "로그인 후 이용해주세요.");
+    fun checkActorCanModify(actor: Member?) {
+        if (actor == null) throw ServiceException("401-1", "로그인 후 이용해주세요.");
 
-        if (actor.isAdmin()) return;
+        if (actor == author) return;
 
-        if (actor.equals(author)) return;
+        throw ServiceException("403-2", "작성자만 댓글을 수정할 수 있습니다.");
+    }
 
-        throw new ServiceException("403-2", "작성자만 댓글을 삭제할 수 있습니다.");
+    fun checkActorCanDelete(actor: Member?) {
+        if (actor == null) throw ServiceException("401-1", "로그인 후 이용해주세요.");
+
+        if (actor.isAdmin) return;
+
+        if (actor == author) return;
+
+        throw ServiceException("403-2", "작성자만 댓글을 삭제할 수 있습니다.");
     }
 }

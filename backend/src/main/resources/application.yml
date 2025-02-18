@@ -47,11 +47,12 @@ spring:
       client:
         registration:
           kakao:
-            clientId: ON_SECRET
-            scope: profile_nickname, profile_image
-            client-name: Kakao
+            client-id: 4144fe77184380aea997d952e32c591f
+            client-secret: 9EDMbH8CX8uqD1m2RKyI5pIfVRQHRMCO
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
             authorization-grant-type: authorization_code
-            redirect-uri: "${custom.site.backUrl}/{action}/oauth2/code/{registrationId}"
+            client-authentication-method: client_secret_post
+            scope: profile_nickname, profile_image
         provider:
           kakao:
             authorization-uri: https://kauth.kakao.com/oauth/authorize
@@ -66,6 +67,9 @@ logging:
     org.hibernate.orm.jdbc.bind: TRACE
     org.hibernate.orm.jdbc.extract: TRACE
     org.springframework.transaction.interceptor: TRACE
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security.oauth2: TRACE
 custom:
   notProdMembers:
     - username: KAKAO__3889999627

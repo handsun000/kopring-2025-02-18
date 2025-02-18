@@ -8,27 +8,29 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Getter
-@SuperBuilder
-@NoArgsConstructor
-public class PostGenFile extends GenFile {
-    public enum TypeCode {
+class PostGenFile : GenFile {
+    enum class TypeCode {
         attachment,
         thumbnail
     }
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Post post;
-    @Enumerated(EnumType.STRING)
-    private TypeCode typeCode;
-
-    @Override
-    protected long getOwnerModelId() {
-        return post.getId();
+    constructor(post: Post, typeCode: TypeCode, fileNo: Int) : super(fileNo) {
+        this.post = post;
+        this.typeCode = typeCode;
     }
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    lateinit var post: Post
+
+    @Enumerated(EnumType.STRING)
+    lateinit var typeCode: TypeCode
+
     @Override
-    protected String getTypeCodeAsStr() {
-        return typeCode.name();
+    override fun getOwnerModelId(): Long {
+        return post.id
+    }
+
+    override fun getTypeCodeAsStr(): String {
+        return typeCode.name
     }
 }

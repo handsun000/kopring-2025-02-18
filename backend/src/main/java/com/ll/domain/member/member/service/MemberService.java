@@ -32,13 +32,13 @@ public class MemberService {
                     throw new ServiceException("409-1", "해당 username은 이미 사용중입니다.");
                 });
 
-        Member member = Member.builder()
-                .username(username)
-                .password(password)
-                .nickname(nickname)
-                .apiKey(UUID.randomUUID().toString())
-                .profileImgUrl(profileImgUrl)
-                .build();
+        Member member = new Member(
+                username,
+                password,
+                nickname,
+                UUID.randomUUID().toString(),
+                profileImgUrl
+        );
 
         return memberRepository.save(member);
     }

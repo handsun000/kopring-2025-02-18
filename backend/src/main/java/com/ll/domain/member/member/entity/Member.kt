@@ -1,77 +1,68 @@
 package com.ll.domain.member.member.entity;
 
-import com.ll.global.jpa.entity.BaseTime;
-import com.ll.standard.util.Ut;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.SuperBuilder;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
+import com.ll.global.jpa.entity.BaseTime
+import com.ll.standard.util.Ut
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 
 @Entity
-@Getter
-@Setter
-@SuperBuilder
-@NoArgsConstructor
-public class Member extends BaseTime {
+class Member : BaseTime {
     @Column(unique = true, length = 30)
-    private String username;
+    lateinit var username: String
 
     @Column(length = 50)
-    private String password;
+    lateinit var password: String
 
     @Column(length = 30)
-    private String nickname;
+    lateinit var nickname: String
 
     @Column(unique = true, length = 50)
-    private String apiKey;
+    lateinit var apiKey: String
 
-    private String profileImgUrl;
+    lateinit var profileImgUrl: String
 
-    public String getName() {
-        return nickname;
+    val name: String
+        get() = nickname
+
+    val isAdmin: Boolean
+        get() = "admin" == username
+
+    constructor(id: Long, username: String, nickname: String) {
+        this.id = id
+        this.username = username
+        this.nickname = nickname
+        this.profileImgUrl = ""; // TODO : 추후에 어떻게 할지 고민
     }
 
-    public boolean isAdmin() {
-        return "admin".equals(username);
-    }
-
-    public boolean matchPassword(String password) {
-        return this.password.equals(password);
-    }
-
-    public Member(long id, String username, String nickname) {
-        this.setId(id);
+    constructor(username: String, password: String, nickname: String, apiKey: String, profileImgUrl: String) {
         this.username = username;
+        this.password = password;
         this.nickname = nickname;
+        this.apiKey = apiKey;
+        this.profileImgUrl = profileImgUrl;
     }
 
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return getAuthoritiesAsStringList()
-                .stream()
-                .map(SimpleGrantedAuthority::new)
-                .toList();
+    fun matchPassword(password: String): Boolean {
+        return this.password == password
     }
 
-    public List<String> getAuthoritiesAsStringList() {
-        List<String> authorities = new ArrayList<>();
+    val authoritiesAsStringList: List<String>
+        get() {
+            val authorities: MutableList<String> = ArrayList()
 
-        if (isAdmin())
-            authorities.add("ROLE_ADMIN");
+            if (isAdmin) authorities.add("ROLE_ADMIN")
 
-        return authorities;
-    }
+            return authorities
+        }
 
-    public String getProfileImgUrlOrDefault() {
-        return Ut.str.isBlank(profileImgUrl) ? "https://placehold.co/640x640?text=O_O" : profileImgUrl;
-    }
+    val authorities: Collection<GrantedAuthority>
+        get() = authoritiesAsStringList
+            .stream()
+            .map { role: String -> SimpleGrantedAuthority(role) }
+            .toList()
+
+    val profileImgUrlOrDefault: String
+        get() = if (Ut.str.isBlank(profileImgUrl)) "https://placehold.co/640x640?text=O_O" else profileImgUrl
 }
-
