@@ -19,6 +19,8 @@ class PostGenFile : GenFile {
         this.typeCode = typeCode;
     }
 
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     lateinit var post: Post
 
@@ -27,7 +29,7 @@ class PostGenFile : GenFile {
 
     @Override
     override fun getOwnerModelId(): Long {
-        return post.id
+        return post.id!!
     }
 
     override fun getTypeCodeAsStr(): String {
