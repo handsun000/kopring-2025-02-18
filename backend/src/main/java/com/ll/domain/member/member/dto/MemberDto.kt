@@ -6,30 +6,19 @@ import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
 
-
-@Getter
-public class MemberDto {
-    @NonNull
-    private final long id;
-
-    @NonNull
-    private final LocalDateTime createDate;
-
-    @NonNull
-    private final LocalDateTime modifyDate;
-
-    @NonNull
-    private final String nickname;
-
-    @NonNull
-    private final String profileImgUrl;
-
-    public MemberDto(Member member) {
-        this.id = member.getId();
-        this.createDate = member.getCreateDate();
-        this.modifyDate = member.getModifyDate();
-        this.nickname = member.getNickname();
-        this.profileImgUrl = member.getProfileImgUrlOrDefault();
-    }
+open class MemberDto(
+    val id: Long,
+    val createDate: LocalDateTime,
+    val modifyDate: LocalDateTime,
+    val nickname: String,
+    val profileImgUrl: String
+) {
+   constructor(member: Member) : this(
+       id = member.id!!,
+       createDate = member.createDate,
+       modifyDate = member.modifyDate,
+       nickname = member.nickname,
+       profileImgUrl = member.profileImgUrlOrDefault
+    )
 }
 

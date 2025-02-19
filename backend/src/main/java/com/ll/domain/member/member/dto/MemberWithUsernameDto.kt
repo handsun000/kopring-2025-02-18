@@ -1,18 +1,12 @@
 package com.ll.domain.member.member.dto;
 
 import com.ll.domain.member.member.entity.Member;
-import lombok.Getter;
 import org.springframework.lang.NonNull;
 
-
-@Getter
-public class MemberWithUsernameDto extends MemberDto {
+class MemberWithUsernameDto(
+    member:Member
+) : MemberDto(member) {
     @NonNull
-    private final String username;
-
-    public MemberWithUsernameDto(Member member) {
-        super(member);
-        this.username = member.getUsername();
-    }
+    val username: String = member.username
 }
 
