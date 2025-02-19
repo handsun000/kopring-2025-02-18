@@ -2,10 +2,14 @@ package com.ll.standard.sampleResource;
 
 import com.ll.global.app.AppConfig;
 import com.ll.standard.util.Ut;
-import lombok.Getter;
 
-@Getter
-public enum SampleResource {
+
+enum class SampleResource(
+    val fileName: String,
+    val width: Int,
+    val height: Int,
+    val duration: Int,
+) {
     AUDIO_M4A_SAMPLE1("sample1-728s.m4a", 0, 0, 728),
     AUDIO_MP3_SAMPLE1("sample1-42s.mp3", 0, 0, 42),
     AUDIO_MP3_SAMPLE2("sample2-9s.mp3", 0, 0, 9),
@@ -20,44 +24,23 @@ public enum SampleResource {
     VIDEO_MP4_SAMPLE1("sample1-640x480x5s.mp4", 640, 480, 5),
     VIDEO_MP4_SAMPLE2("sample2-1280x720x117s.mp4", 1280, 720, 117);
 
-    private final String fileExtTypeCode;
-    private final String fileExtType2Code;
-    private final String fileExt; // 확장자 (mp3, jpg 등)
-    private final String fileName;  // 파일명
-    private final int width;
-    private final int height;
-    private final int duration;
+    val fileExt: String = Ut.file.getFileExt(fileName)
+    val fileExtTypeCode: String = Ut.file.getFileExtTypeCodeFromFileExt(fileExt)
+    val fileExtType2Code: String = Ut.file.getFileExtType2CodeFromFileExt(fileExt)
 
-    SampleResource(String fileName, int width, int height, int duration) {
-        String fileExt = Ut.file.getFileExt(fileName);
-        String fileExtTypeCode = Ut.file.getFileExtTypeCodeFromFileExt(fileExt);
-        String fileExtType2Code = Ut.file.getFileExtType2CodeFromFileExt(fileExt);
+    val filePath: String
+        get() = "${AppConfig.getResourcesSampleDirPath()}/$fileExtTypeCode/$fileExtType2Code/$fileName"
 
-        this.fileExtTypeCode = fileExtTypeCode;
-        this.fileExtType2Code = fileExtType2Code;
-        this.fileExt = fileExt;
-        this.fileName = fileName;
-        this.width = width;
-        this.height = height;
-        this.duration = duration;
-    }
-
-    public String getFilePath() {
-        return AppConfig.getResourcesSampleDirPath() + "/" + getFileExtTypeCode() + "/" + getFileExtType2Code() + "/" + getFileName();
-    }
-
-    public String makeCopy() {
-        String newFilePath = AppConfig.getTempDirPath() + "/" + getFileName();
-        Ut.file.copy(getFilePath(), newFilePath);
+    fun makeCopy(): String {
+        val newFilePath = AppConfig.getTempDirPath() + "/" + fileName;
+        Ut.file.copy(filePath, newFilePath);
 
         return newFilePath;
     }
 
-    public String getOriginalFileName() {
-        return getFileName();
-    }
+    val originalFileName: String
+        get() = fileName
 
-    public String getContentType() {
-        return Ut.file.getContentType(getFileExt());
-    }
+    val contentType: String
+        get() = Ut.file.getContentType(fileExt)
 }
