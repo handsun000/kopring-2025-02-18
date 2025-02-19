@@ -13,11 +13,11 @@ data class PostCommentDto(
     val content: String,
 ) {
     constructor(postComment: PostComment) : this(
-        id = postComment.id!!,
+        id = postComment.id,
         createDate = postComment.createDate,
         modifyDate = postComment.modifyDate,
-        postId = postComment.post.id!!,
-        authorId = postComment.author.id!!,
+        postId = postComment.post.id,
+        authorId = postComment.author.id,
         authorName = postComment.author.name,
         content = postComment.content
     )

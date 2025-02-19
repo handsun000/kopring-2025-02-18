@@ -194,7 +194,7 @@ public class ApiV1PostGenFileController {
 
         PostGenFile postGenFile = post.putGenFile(typeCode, fileNo, filePath);
 
-        boolean justCreated = postGenFile.getId() == null;
+        boolean justCreated = postGenFile.getId() == 0;
 
         if (typeCode == PostGenFile.TypeCode.thumbnail) {
             // 만약에 등록된게 썸네일 이라면

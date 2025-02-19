@@ -30,10 +30,10 @@ class Member : BaseTime {
         get() = "admin" == username
 
     constructor(id: Long, username: String, nickname: String) {
-        this.id = id
+        this._id = id
         this.username = username
         this.nickname = nickname
-        this.profileImgUrl = ""; // TODO : 추후에 어떻게 할지 고민
+        this.profileImgUrl = "" // TODO : 추후에 어떻게 할지 고민
     }
 
     constructor(username: String, password: String, nickname: String, apiKey: String, profileImgUrl: String) {

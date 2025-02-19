@@ -17,10 +17,10 @@ open class PostDto(
     val thumbnailImgUrl: String
 ) {
     constructor(post: Post) : this(
-        id = post.id!!,
+        id = post.id,
         createDate = post.createDate,
         modifyDate = post.modifyDate,
-        authorId = post.author.id!!,
+        authorId = post.author.id,
         authorName = post.author.name,
         authorProfileImgUrl = post.author.profileImgUrlOrDefault,
         title = post.title,
