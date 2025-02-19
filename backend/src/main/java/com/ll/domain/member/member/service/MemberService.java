@@ -28,7 +28,7 @@ public class MemberService {
     public Member join(String username, String password, String nickname, String profileImgUrl) {
         memberRepository
                 .findByUsername(username)
-                .ifPresent(_ -> {
+                .ifPresent(ignored -> {
                     throw new ServiceException("409-1", "해당 username은 이미 사용중입니다.");
                 });
 

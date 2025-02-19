@@ -68,7 +68,7 @@ class Rq(
     }
 
     fun deleteCookie(name: String) {
-        val cookie = ResponseCookie.from(name, null.toString())
+        val cookie = ResponseCookie.from(name, "")
             .path("/")
             .domain("localhost")
             .sameSite("Strict")
@@ -84,7 +84,7 @@ class Rq(
         resp.setHeader(name, value)
     }
 
-    fun getHeader(name: String): String {
+    fun getHeader(name: String): String? {
         return req.getHeader(name)
     }
 

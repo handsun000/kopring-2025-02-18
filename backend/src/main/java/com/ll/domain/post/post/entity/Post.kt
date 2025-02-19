@@ -9,6 +9,7 @@ import com.ll.global.rsData.RsData
 import com.ll.standard.base.Empty
 import com.ll.standard.util.Ut
 import jakarta.persistence.*
+
 import java.util.*
 import java.util.stream.Collectors
 
@@ -280,5 +281,5 @@ class Post : BaseTime {
     val thumbnailImgUrlOrDefault: String
         get() = Optional.ofNullable(thumbnailGenFile)
             .map { it.publicUrl }
-            .orElse("https://placehold.co/1200x1200?text=POST " + id + "&darkInvertible=1")
+            .orElse("https://placehold.co/1200x1200?text=POST $id&darkInvertible=1")
 }
