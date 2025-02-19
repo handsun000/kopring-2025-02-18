@@ -1,23 +1,15 @@
-package com.ll.domain.post.post.dto;
+package com.ll.domain.post.post.dto
 
-import com.ll.domain.post.post.entity.Post;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.lang.NonNull;
+import com.ll.domain.post.post.entity.Post
 
-@Getter
-public class PostWithContentDto extends PostDto {
-    @NonNull
-    private final String content;
-
-    @Setter
-    private Boolean actorCanModify;
-
-    @Setter
-    private Boolean actorCanDelete;
-
-    public PostWithContentDto(Post post) {
-        super(post);
-        this.content = post.getContent();
-    }
+class PostWithContentDto(
+    val content: String,
+    var actorCanModify: Boolean? = null,
+    var actorCanDelete: Boolean? = null,
+    private val post: Post
+) : PostDto(post) {
+    constructor(post: Post) : this(
+        content = post.content,
+        post = post
+    )
 }

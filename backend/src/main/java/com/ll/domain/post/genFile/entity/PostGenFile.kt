@@ -19,8 +19,6 @@ class PostGenFile : GenFile {
         this.typeCode = typeCode;
     }
 
-
-
     @ManyToOne(fetch = FetchType.LAZY)
     lateinit var post: Post
 

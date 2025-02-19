@@ -1,53 +1,31 @@
 package com.ll.domain.post.post.dto;
 
 import com.ll.domain.post.post.entity.Post;
-import lombok.Getter;
-import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
 
-@Getter
-public class PostDto {
-    @NonNull
-    private final long id;
-
-    @NonNull
-    private final LocalDateTime createDate;
-
-    @NonNull
-    private final LocalDateTime modifyDate;
-
-    @NonNull
-    private final long authorId;
-
-    @NonNull
-    private final String authorName;
-
-    @NonNull
-    private final String authorProfileImgUrl;
-
-    @NonNull
-    private final String title;
-
-    @NonNull
-    private final boolean published;
-
-    @NonNull
-    private final boolean listed;
-
-    @NonNull
-    private final String thumbnailImgUrl;
-
-    public PostDto(Post post) {
-        this.id = post.getId();
-        this.createDate = post.getCreateDate();
-        this.modifyDate = post.getModifyDate();
-        this.authorId = post.getAuthor().getId();
-        this.authorName = post.getAuthor().getName();
-        this.authorProfileImgUrl = post.getAuthor().getProfileImgUrlOrDefault();
-        this.title = post.getTitle();
-        this.published = post.isPublished();
-        this.listed = post.isListed();
-        this.thumbnailImgUrl = post.getThumbnailImgUrlOrDefault();
-    }
+open class PostDto(
+    val id: Long,
+    val createDate: LocalDateTime,
+    val modifyDate: LocalDateTime,
+    val authorId: Long,
+    val authorName: String,
+    val authorProfileImgUrl: String,
+    val title: String,
+    val published: Boolean,
+    val listed: Boolean,
+    val thumbnailImgUrl: String
+) {
+    constructor(post: Post) : this(
+        id = post.id!!,
+        createDate = post.createDate,
+        modifyDate = post.modifyDate,
+        authorId = post.author.id!!,
+        authorName = post.author.name,
+        authorProfileImgUrl = post.author.profileImgUrlOrDefault,
+        title = post.title,
+        published = post.published,
+        listed = post.listed,
+        thumbnailImgUrl = post.thumbnailImgUrlOrDefault
+    )
 }

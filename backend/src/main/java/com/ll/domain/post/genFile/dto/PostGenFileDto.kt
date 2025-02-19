@@ -6,54 +6,39 @@ import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
 
-@Getter
-public class PostGenFileDto {
-    @NonNull
-    private long id;
-    @NonNull
-    private LocalDateTime createDate;
-    @NonNull
-    private LocalDateTime modifyDate;
-    @NonNull
-    private long postId;
-    @NonNull
-    private String fileName;
-    @NonNull
-    private PostGenFile.TypeCode typeCode;
-    @NonNull
-    private String fileExtTypeCode;
-    @NonNull
-    private String fileExtType2Code;
-    @NonNull
-    private long fileSize;
-    @NonNull
-    private long fileNo;
-    @NonNull
-    private String fileExt;
-    @NonNull
-    private String fileDateDir;
-    @NonNull
-    private String originalFileName;
-    @NonNull
-    private String downloadUrl;
-    @NonNull
-    private String publicUrl;
+data class PostGenFileDto(
+    val id: Long,
+    val createDate: LocalDateTime,
+    val modifyDate: LocalDateTime,
+    val postId: Long,
+    val fileName: String,
+    val typeCode: PostGenFile.TypeCode,
+    val fileExtTypeCode: String,
+    val fileExtType2Code: String,
+    val fileSize: Int,
+    val fileNo: Int,
+    val fileExt: String,
+    val fileDateDir: String,
+    val originalFileName: String,
+    val downloadUrl: String,
+    val publicUrl: String
+) {
 
-    public PostGenFileDto(PostGenFile postGenFile) {
-        this.id = postGenFile.getId();
-        this.createDate = postGenFile.getCreateDate();
-        this.modifyDate = postGenFile.getModifyDate();
-        this.postId = postGenFile.getPost().getId();
-        this.fileName = postGenFile.getFileName();
-        this.typeCode = postGenFile.getTypeCode();
-        this.fileExtTypeCode = postGenFile.getFileExtTypeCode();
-        this.fileExtType2Code = postGenFile.getFileExtType2Code();
-        this.fileSize = postGenFile.getFileSize();
-        this.fileNo = postGenFile.getFileNo();
-        this.fileExt = postGenFile.getFileExt();
-        this.fileDateDir = postGenFile.getFileDateDir();
-        this.originalFileName = postGenFile.getOriginalFileName();
-        this.downloadUrl = postGenFile.getDownloadUrl();
-        this.publicUrl = postGenFile.getPublicUrl();
-    }
+    constructor(postGenFile: PostGenFile) : this(
+        id = postGenFile.id!!,
+        createDate = postGenFile.createDate,
+        modifyDate = postGenFile.modifyDate,
+        postId = postGenFile.post.id!!,
+        fileName = postGenFile.fileName,
+        typeCode = postGenFile.typeCode,
+        fileExtTypeCode = postGenFile.fileExtTypeCode,
+        fileExtType2Code = postGenFile.fileExtType2Code,
+        fileSize = postGenFile.fileSize,
+        fileNo = postGenFile.fileNo,
+        fileExt = postGenFile.fileExt,
+        fileDateDir = postGenFile.fileDateDir,
+        originalFileName = postGenFile.originalFileName,
+        downloadUrl = postGenFile.downloadUrl,
+        publicUrl = postGenFile.publicUrl
+    )
 }
