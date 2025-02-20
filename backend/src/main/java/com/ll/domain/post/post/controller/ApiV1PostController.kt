@@ -26,9 +26,8 @@ import java.time.LocalDateTime
 @SecurityRequirement(name = "bearerAuth")
 class ApiV1PostController(
     private val postService: PostService,
-    private val rq: Rq,
+    private val rq: Rq
 ) {
-
     private fun makePostWithContentDto(post: Post): PostWithContentDto {
         val actor = rq.actor
 
@@ -43,11 +42,10 @@ class ApiV1PostController(
     }
 
 
-    @JvmRecord
     data class PostStatisticsResBody(
         val totalPostCount: Long,
         val totalPublishedPostCount: Long,
-        val totalListedPostCount: Long,
+        val totalListedPostCount: Long
     )
 
     @GetMapping("/statistics")
@@ -68,7 +66,7 @@ class ApiV1PostController(
         @RequestParam(defaultValue = "title") searchKeywordType: PostSearchKeywordTypeV1,
         @RequestParam(defaultValue = "") searchKeyword: String,
         @RequestParam(defaultValue = "1") page: Int,
-        @RequestParam(defaultValue = "30") pageSize: Int,
+        @RequestParam(defaultValue = "30") pageSize: Int
     ): PageDto<PostDto> {
         val actor = rq.actor!!
 
@@ -85,7 +83,7 @@ class ApiV1PostController(
         @RequestParam(defaultValue = "title") searchKeywordType: PostSearchKeywordTypeV1,
         @RequestParam(defaultValue = "") searchKeyword: String,
         @RequestParam(defaultValue = "1") page: Int,
-        @RequestParam(defaultValue = "30") pageSize: Int,
+        @RequestParam(defaultValue = "30") pageSize: Int
     ): PageDto<PostDto> {
         return PageDto(
             postService.findByListedPaged(true, searchKeywordType, searchKeyword, page, pageSize)
@@ -98,7 +96,7 @@ class ApiV1PostController(
     @Operation(summary = "단건 조회", description = "비밀글은 작성자만 조회 가능")
     fun item(
         @PathVariable id: Long,
-        @RequestParam(defaultValue = "") lastModifyDateAfter: LocalDateTime,
+        @RequestParam(defaultValue = "") lastModifyDateAfter: LocalDateTime?
     ): PostWithContentDto {
         val post = postService.findById(id).get()
 
@@ -127,18 +125,19 @@ class ApiV1PostController(
         )
     }
 
+
     data class PostWriteReqBody(
         @field:NotBlank @field:Size(min = 2, max = 100) val title: String,
         @field:NotBlank @field:Size(min = 2, max = 10000000) val content: String,
         val published: Boolean,
-        val listed: Boolean,
+        val listed: Boolean
     )
 
     @PostMapping
     @Transactional
     @Operation(summary = "작성")
     fun write(
-        @RequestBody @Valid reqBody: PostWriteReqBody,
+        @RequestBody @Valid reqBody: PostWriteReqBody
     ): RsData<PostDto> {
         val actor = rq.actor!!
 
@@ -157,11 +156,12 @@ class ApiV1PostController(
         )
     }
 
+
     data class PostModifyReqBody(
         @field:NotBlank @field:Size(min = 2, max = 100) val title: String,
         @field:NotBlank @field:Size(min = 2, max = 10000000) val content: String,
         val published: Boolean,
-        val listed: Boolean,
+        val listed: Boolean
     )
 
     @PutMapping("/{id}")
@@ -169,7 +169,7 @@ class ApiV1PostController(
     @Operation(summary = "수정")
     fun modify(
         @PathVariable id: Long,
-        @RequestBody @Valid reqBody: PostModifyReqBody,
+        @RequestBody @Valid reqBody: PostModifyReqBody
     ): RsData<PostDto> {
         val actor = rq.actor!!
 
@@ -193,7 +193,7 @@ class ApiV1PostController(
     @Transactional
     @Operation(summary = "삭제", description = "작성자 본인 뿐 아니라 관리자도 삭제 가능")
     fun delete(
-        @PathVariable id: Long,
+        @PathVariable id: Long
     ): RsData<Empty> {
         val member = rq.actor!!
 
@@ -206,5 +206,3 @@ class ApiV1PostController(
         return RsData("200-1", "${id}번 글이 삭제되었습니다.")
     }
 }
-
-
