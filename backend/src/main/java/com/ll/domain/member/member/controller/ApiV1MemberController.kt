@@ -23,7 +23,6 @@ class ApiV1MemberController(
     private val rq: Rq,
 ) {
 
-    @JvmRecord
     data class MemberJoinReqBody(
         @field:NotBlank val username: String,
         @field:NotBlank val password: String,
@@ -45,14 +44,11 @@ class ApiV1MemberController(
         )
     }
 
-
-    @JvmRecord
     data class MemberLoginReqBody(
         @field:NotBlank val username: String,
         @field:NotBlank val password: String,
     )
 
-    @JvmRecord
     data class MemberLoginResBody(
         val item: MemberDto,
          val apiKey: String,
@@ -108,8 +104,6 @@ class ApiV1MemberController(
         return MemberDto(actor)
     }
 
-
-    @JvmRecord
     data class MemberModifyMeReqBody(
         @field:NotBlank val nickname: String,
     )
