@@ -1,21 +1,15 @@
 package com.ll.global.rq;
 
-import com.ll.domain.member.member.entity.Member;
-import com.ll.domain.member.member.service.MemberService;
-import com.ll.global.security.SecurityUser;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseCookie;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
-import org.springframework.web.context.annotation.RequestScope;
-
-import java.util.Arrays;
-import java.util.Optional;
+import com.ll.domain.member.member.entity.Member
+import com.ll.domain.member.member.service.MemberService
+import com.ll.global.security.SecurityUser
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import org.springframework.http.ResponseCookie
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.stereotype.Component
+import org.springframework.web.context.annotation.RequestScope
 
 // Request/Response 를 추상화한 객체
 // Request, Response, Cookie, Session 등을 다룬다.
@@ -33,13 +27,13 @@ class Rq(
             "",
             member.nickname,
             member.authorities
-        );
+        )
 
         val authentication = UsernamePasswordAuthenticationToken(
             user,
             user.password,
             user.authorities
-        );
+        )
 
         SecurityContextHolder.getContext().authentication = authentication;
     }

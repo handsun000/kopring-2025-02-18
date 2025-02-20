@@ -44,8 +44,8 @@ class CustomAuthenticationFilter(
         rq.refreshAccessToken(member)
     }
 
-    private fun refreshAccessTokenByApiKey(apiKey: String): Member? {
-        val member = memberService.findByApiKey(apiKey).orElse(null) ?: return null
+    private fun refreshAccessTokenByApiKey(apiKey: String): Member {
+        val member = memberService.findByApiKey(apiKey).get()
         refreshAccessToken(member)
         return member
     }
