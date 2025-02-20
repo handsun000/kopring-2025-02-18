@@ -1,100 +1,103 @@
-package com.ll.global.globalExceptionHandler;
+package com.ll.global.globalExceptionHandler
 
-import com.ll.global.app.AppConfig;
-import com.ll.global.exceptions.ServiceException;
-import com.ll.global.rsData.RsData;
-import com.ll.standard.base.Empty;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
-import org.springframework.web.servlet.NoHandlerFoundException;
-
-import java.util.Comparator;
-import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
+import com.ll.global.app.AppConfig.Companion.getSpringServletMultipartMaxFileSize
+import com.ll.global.app.AppConfig.Companion.isNotProd
+import com.ll.global.exceptions.ServiceException
+import com.ll.global.rsData.RsData
+import com.ll.standard.base.Empty
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.validation.FieldError
+import org.springframework.validation.ObjectError
+import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.annotation.ControllerAdvice
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.multipart.MaxUploadSizeExceededException
+import org.springframework.web.servlet.NoHandlerFoundException
+import java.util.stream.Collectors
 
 @ControllerAdvice
-@RequiredArgsConstructor
-public class GlobalExceptionHandler {
-    @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<RsData<Empty>> handle(NoHandlerFoundException ex) {
 
-        if (AppConfig.isNotProd()) ex.printStackTrace();
+class GlobalExceptionHandler {
+    @ExceptionHandler(NoHandlerFoundException::class)
+    fun handle(ex: NoHandlerFoundException): ResponseEntity<RsData<Empty>> {
+        if (isNotProd()) ex.printStackTrace()
 
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new RsData<>(
-                        "404-1",
-                        "해당 데이터가 존재하지 않습니다."
-                ));
+            .status(HttpStatus.NOT_FOUND)
+            .body(
+                RsData(
+                    "404-1",
+                    "해당 데이터가 존재하지 않습니다."
+                )
+            )
     }
 
 
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<RsData<Empty>> handle(MaxUploadSizeExceededException ex) {
-
-        if (AppConfig.isNotProd()) ex.printStackTrace();
+    @ExceptionHandler(MaxUploadSizeExceededException::class)
+    fun handle(ex: MaxUploadSizeExceededException): ResponseEntity<RsData<Empty>> {
+        if (isNotProd()) ex.printStackTrace()
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new RsData<>(
-                        "413-1",
-                        "업로드되는 파일의 용량은 %s(을)를 초과할 수 없습니다.".formatted(AppConfig.getSpringServletMultipartMaxFileSize())
-                ));
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                RsData(
+                    "413-1",
+                    "업로드되는 파일의 용량은 %s(을)를 초과할 수 없습니다.".formatted(getSpringServletMultipartMaxFileSize())
+                )
+            )
     }
 
 
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<RsData<Empty>> handle(NoSuchElementException ex) {
-
-        if (AppConfig.isNotProd()) ex.printStackTrace();
+    @ExceptionHandler(NoSuchElementException::class)
+    fun handle(ex: NoSuchElementException): ResponseEntity<RsData<Empty>> {
+        if (isNotProd()) ex.printStackTrace()
 
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new RsData<>(
-                        "404-1",
-                        "해당 데이터가 존재하지 않습니다."
-                ));
+            .status(HttpStatus.NOT_FOUND)
+            .body(
+                RsData(
+                    "404-1",
+                    "해당 데이터가 존재하지 않습니다."
+                )
+            )
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<RsData<Empty>> handle(MethodArgumentNotValidException ex) {
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handle(ex: MethodArgumentNotValidException): ResponseEntity<RsData<Empty>> {
+        if (isNotProd()) ex.printStackTrace()
 
-        if (AppConfig.isNotProd()) ex.printStackTrace();
-
-        String message = ex.getBindingResult()
-                .getAllErrors()
-                .stream()
-                .filter(error -> error instanceof FieldError)
-                .map(error -> (FieldError) error)
-                .map(error -> error.getField() + "-" + error.getCode() + "-" + error.getDefaultMessage())
-                .sorted(Comparator.comparing(String::toString))
-                .collect(Collectors.joining("\n"));
+        val message = ex.bindingResult
+            .allErrors
+            .stream()
+            .filter { error: ObjectError? -> error is FieldError }
+            .map { error: ObjectError -> error as FieldError }
+            .map { error: FieldError -> error.field + "-" + error.code + "-" + error.defaultMessage }
+            .sorted(Comparator.comparing { obj: String -> obj })
+            .collect(Collectors.joining("\n"))
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new RsData<>(
-                        "400-1",
-                        message
-                ));
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                RsData(
+                    "400-1",
+                    message
+                )
+            )
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(ServiceException.class)
-    public ResponseEntity<RsData<Empty>> handle(ServiceException ex) {
+    @ExceptionHandler(
+        ServiceException::class
+    )
+    fun handle(ex: ServiceException): ResponseEntity<RsData<Empty>> {
+        if (isNotProd()) ex.printStackTrace()
 
-        if (AppConfig.isNotProd()) ex.printStackTrace();
-
-        RsData<Empty> rsData = ex.getRsData();
+        val rsData = ex.rsData
 
         return ResponseEntity
-                .status(rsData.getStatusCode())
-                .body(rsData);
+            .status(rsData.statusCode)
+            .body(rsData)
     }
 }
