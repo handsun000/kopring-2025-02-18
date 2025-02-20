@@ -1,139 +1,137 @@
-package com.ll.domain.member.member.service;
+package com.ll.domain.member.member.service
 
-import com.ll.domain.member.member.entity.Member;
-import com.ll.standard.util.Ut;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
-
-import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import com.ll.standard.util.Ut.jwt.isValid
+import com.ll.standard.util.Ut.jwt.payload
+import com.ll.standard.util.Ut.jwt.toString
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.Keys
+import org.assertj.core.api.Assertions
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.transaction.annotation.Transactional
+import java.util.*
 
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-public class AuthTokenServiceTest {
+class AuthTokenServiceTest {
     @Autowired
-    private MemberService memberService;
+    private lateinit var memberService: MemberService
+
     @Autowired
-    private AuthTokenService authTokenService;
+    private lateinit var authTokenService: AuthTokenService
 
-    @Value("${custom.jwt.secretKey}")
-    private String jwtSecretKey;
+    @Value("\${custom.jwt.secretKey}")
+    private lateinit var jwtSecretKey: String
 
-    @Value("${custom.accessToken.expirationSeconds}")
-    private long accessTokenExpirationSeconds;
+    @Value("\${custom.accessToken.expirationSeconds}")
+    private var accessTokenExpirationSeconds: Long = 0
 
     @Test
     @DisplayName("authTokenService 서비스가 존재한다.")
-    void t1() {
-        assertThat(authTokenService).isNotNull();
+    fun t1() {
+        Assertions.assertThat(authTokenService).isNotNull()
     }
 
     @Test
     @DisplayName("jjwt 로 JWT 생성, {name=\"Paul\", age=23}")
-    void t2() {
-        Date issuedAt = new Date();
-        Date expiration = new Date(issuedAt.getTime() + 1000L * accessTokenExpirationSeconds);
+    fun t2() {
+        val issuedAt = Date()
+        val expiration = Date(issuedAt.time + 1000L * accessTokenExpirationSeconds!!)
 
-        SecretKey secretKey = Keys.hmacShaKeyFor(jwtSecretKey.getBytes());
+        val secretKey = Keys.hmacShaKeyFor(jwtSecretKey.toByteArray())
 
-        Map<String, Object> payload = Map.of(
-                "name", "Paul",
-                "age", 23
-        );
+        val payload = java.util.Map.of<String, Any?>(
+            "name", "Paul",
+            "age", 23
+        )
 
-        String jwtStr = Jwts.builder()
-                .claims(payload)
-                .issuedAt(issuedAt)
-                .expiration(expiration)
-                .signWith(secretKey)
-                .compact();
+        val jwtStr = Jwts.builder()
+            .claims(payload)
+            .issuedAt(issuedAt)
+            .expiration(expiration)
+            .signWith(secretKey)
+            .compact()
 
-        assertThat(jwtStr).isNotBlank();
+        Assertions.assertThat(jwtStr).isNotBlank()
 
         // 키가 유효한지 테스트
-        Map<String, Object> parsedPayload = (Map<String, Object>) Jwts
-                .parser()
-                .verifyWith(secretKey)
-                .build()
-                .parse(jwtStr)
-                .getPayload();
+        val parsedPayload = Jwts
+            .parser()
+            .verifyWith(secretKey)
+            .build()
+            .parse(jwtStr)
+            .payload as Map<String, Any>
 
         // 키로 부터 payload 를 파싱한 결과가 원래 payload 와 같은지 테스트
-        assertThat(parsedPayload)
-                .containsAllEntriesOf(payload);
+        Assertions.assertThat(parsedPayload)
+            .containsAllEntriesOf(payload)
     }
 
     @Test
     @DisplayName("Ut.jwt.toString 를 통해서 JWT 생성, {name=\"Paul\", age=23}")
-    void t3() {
-        Map<String, Object> payload = Map.of("name", "Paul", "age", 23);
+    fun t3() {
+        val payload = java.util.Map.of<String, Any>("name", "Paul", "age", 23)
 
-        String jwtStr = Ut.jwt.toString(jwtSecretKey, accessTokenExpirationSeconds, payload);
+        val jwtStr = toString(jwtSecretKey, accessTokenExpirationSeconds!!, payload)
 
-        assertThat(jwtStr).isNotBlank();
-        assertThat(Ut.jwt.isValid(jwtSecretKey, jwtStr)).isTrue();
+        Assertions.assertThat(jwtStr).isNotBlank()
+        Assertions.assertThat(isValid(jwtSecretKey, jwtStr)).isTrue()
 
-        Map<String, Object> parsedPayload = Ut.jwt.payload(jwtSecretKey, jwtStr);
+        val parsedPayload = payload(jwtSecretKey, jwtStr)
 
-        assertThat(parsedPayload).containsAllEntriesOf(payload);
+        Assertions.assertThat(parsedPayload).containsAllEntriesOf(payload)
     }
 
     @Test
     @DisplayName("authTokenService.genAccessToken(member);")
-    void t4() {
-        Member memberUser1 = memberService.findByUsername("user1").get();
+    fun t4() {
+        val memberUser1 = memberService.findByUsername("user1").get()
 
-        String accessToken = authTokenService.genAccessToken(memberUser1);
+        val accessToken = authTokenService.genAccessToken(memberUser1)
 
-        assertThat(accessToken).isNotBlank();
+        Assertions.assertThat(accessToken).isNotBlank()
 
-        assertThat(Ut.jwt.isValid(jwtSecretKey, accessToken)).isTrue();
+        Assertions.assertThat(isValid(jwtSecretKey, accessToken)).isTrue()
 
-        Map<String, Object> parsedPayload = authTokenService.payload(accessToken);
+        val parsedPayload = authTokenService.payload(accessToken)
 
-        assertThat(parsedPayload)
-                .containsAllEntriesOf(
-                        Map.of(
-                                "id", memberUser1.getId(),
-                                "username", memberUser1.getUsername()
-                        )
-                );
+        Assertions.assertThat(parsedPayload)
+            .containsAllEntriesOf(
+                java.util.Map.of(
+                    "id", memberUser1.id,
+                    "username", memberUser1.username
+                )
+            )
 
-        System.out.println("memberUser1 accessToken = " + accessToken);
+        println("memberUser1 accessToken = $accessToken")
     }
 
     @Test
     @DisplayName("authTokenService.genAccessToken(memberAdmin);")
-    void t5() {
-        Member memberAdmin = memberService.findByUsername("admin").get();
+    fun t5() {
+        val memberAdmin = memberService.findByUsername("admin").get()
 
-        String accessToken = authTokenService.genAccessToken(memberAdmin);
+        val accessToken = authTokenService.genAccessToken(memberAdmin)
 
-        assertThat(accessToken).isNotBlank();
+        Assertions.assertThat(accessToken).isNotBlank()
 
-        assertThat(Ut.jwt.isValid(jwtSecretKey, accessToken)).isTrue();
+        Assertions.assertThat(isValid(jwtSecretKey, accessToken)).isTrue()
 
-        Map<String, Object> parsedPayload = authTokenService.payload(accessToken);
+        val parsedPayload = authTokenService.payload(accessToken)
 
-        assertThat(parsedPayload)
-                .containsAllEntriesOf(
-                        Map.of(
-                                "id", memberAdmin.getId(),
-                                "username", memberAdmin.getUsername()
-                        )
-                );
+        Assertions.assertThat(parsedPayload)
+            .containsAllEntriesOf(
+                java.util.Map.of(
+                    "id", memberAdmin.id,
+                    "username", memberAdmin.username
+                )
+            )
 
-        System.out.println("memberAdmin accessToken = " + accessToken);
+        println("memberAdmin accessToken = $accessToken")
     }
 }

@@ -1,419 +1,549 @@
-package com.ll.domain.post.genFile.controller;
+package com.ll.domain.post.genFile.controller
 
-import com.ll.domain.member.member.service.MemberService;
-import com.ll.domain.post.genFile.entity.PostGenFile;
-import com.ll.domain.post.post.service.PostService;
-import com.ll.global.app.AppConfig;
-import com.ll.standard.sampleResource.SampleResource;
-import com.ll.standard.util.Ut;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.test.context.support.WithUserDetails;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.io.FileInputStream;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.ll.domain.post.genFile.entity.PostGenFile
+import com.ll.domain.post.post.service.PostService
+import com.ll.global.app.AppConfig.Companion.getTempDirPath
+import com.ll.standard.sampleResource.SampleResource
+import com.ll.standard.util.Ut.file.copy
+import com.ll.standard.util.Ut.file.mv
+import com.ll.standard.util.Ut.file.rm
+import org.assertj.core.api.Assertions
+import org.hamcrest.Matchers
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockMultipartFile
+import org.springframework.security.test.context.support.WithUserDetails
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import org.springframework.transaction.annotation.Transactional
+import java.io.FileInputStream
 
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-public class ApiV1PostGenFileControllerTest {
+class ApiV1PostGenFileControllerTest {
     @Autowired
-    private PostService postService;
+    private lateinit var postService: PostService
+
     @Autowired
-    private MemberService memberService;
-    @Autowired
-    private MockMvc mvc;
+    private lateinit var mvc: MockMvc
 
     @Test
     @DisplayName("다건 조회")
-    void t1() throws Exception {
-        ResultActions resultActions = mvc
-                .perform(
-                        get("/api/v1/posts/9/genFiles")
-                )
-                .andDo(print());
+    fun t1() {
+        val resultActions = mvc
+            .perform(
+                MockMvcRequestBuilders.get("/api/v1/posts/9/genFiles")
+            )
+            .andDo(MockMvcResultHandlers.print())
 
         resultActions
-                .andExpect(handler().handlerType(ApiV1PostGenFileController.class))
-                .andExpect(handler().methodName("items"))
-                .andExpect(status().isOk());
+            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1PostGenFileController::class.java))
+            .andExpect(MockMvcResultMatchers.handler().methodName("items"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
 
-        List<PostGenFile> postGenFiles = postService
-                .findById(9)
-                .get()
-                .getGenFiles();
+        val postGenFiles: List<PostGenFile> = postService
+            .findById(9)
+            .get()
+            .genFiles
 
-        for (int i = 0; i < postGenFiles.size(); i++) {
-            PostGenFile postGenFile = postGenFiles.get(i);
+        for (i in postGenFiles.indices) {
+            val postGenFile = postGenFiles[i]
             resultActions
-                    .andExpect(jsonPath("$[%d].id".formatted(i)).value(postGenFile.getId()))
-                    .andExpect(jsonPath("$[%d].createDate".formatted(i)).value(Matchers.startsWith(postGenFile.getCreateDate().toString().substring(0, 20))))
-                    .andExpect(jsonPath("$[%d].modifyDate".formatted(i)).value(Matchers.startsWith(postGenFile.getModifyDate().toString().substring(0, 20))))
-                    .andExpect(jsonPath("$[%d].postId".formatted(i)).value(postGenFile.getPost().getId()))
-                    .andExpect(jsonPath("$[%d].typeCode".formatted(i)).value(postGenFile.getTypeCode().name()))
-                    .andExpect(jsonPath("$[%d].fileExtTypeCode".formatted(i)).value(postGenFile.getFileExtTypeCode()))
-                    .andExpect(jsonPath("$[%d].fileExtType2Code".formatted(i)).value(postGenFile.getFileExtType2Code()))
-                    .andExpect(jsonPath("$[%d].fileSize".formatted(i)).value(postGenFile.getFileSize()))
-                    .andExpect(jsonPath("$[%d].fileNo".formatted(i)).value(postGenFile.getFileNo()))
-                    .andExpect(jsonPath("$[%d].fileExt".formatted(i)).value(postGenFile.getFileExt()))
-                    .andExpect(jsonPath("$[%d].fileDateDir".formatted(i)).value(postGenFile.getFileDateDir()))
-                    .andExpect(jsonPath("$[%d].originalFileName".formatted(i)).value(postGenFile.getOriginalFileName()))
-                    .andExpect(jsonPath("$[%d].downloadUrl".formatted(i)).value(postGenFile.getDownloadUrl()))
-                    .andExpect(jsonPath("$[%d].publicUrl".formatted(i)).value(postGenFile.getPublicUrl()))
-                    .andExpect(jsonPath("$[%d].fileName".formatted(i)).value(postGenFile.getFileName()));
+                .andExpect(MockMvcResultMatchers.jsonPath("$[$i].id").value(postGenFile.id))
+                .andExpect(
+                    MockMvcResultMatchers.jsonPath("$[$i].createDate")
+                        .value(Matchers.startsWith(postGenFile.createDate.toString().substring(0, 20)))
+                )
+                .andExpect(
+                    MockMvcResultMatchers.jsonPath("$[$i].modifyDate")
+                        .value(Matchers.startsWith(postGenFile.modifyDate.toString().substring(0, 20)))
+                )
+                .andExpect(MockMvcResultMatchers.jsonPath("$[$i].postId").value(postGenFile.post.id))
+                .andExpect(
+                    MockMvcResultMatchers.jsonPath("$[$i].typeCode").value(postGenFile.typeCode.name)
+                )
+                .andExpect(
+                    MockMvcResultMatchers.jsonPath("$[$i].fileExtTypeCode")
+                        .value(postGenFile.fileExtTypeCode)
+                )
+                .andExpect(
+                    MockMvcResultMatchers.jsonPath("$[$i].fileExtType2Code")
+                        .value(postGenFile.fileExtType2Code)
+                )
+                .andExpect(MockMvcResultMatchers.jsonPath("$[$i].fileSize").value(postGenFile.fileSize))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[$i].fileNo").value(postGenFile.fileNo))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[$i].fileExt").value(postGenFile.fileExt))
+                .andExpect(
+                    MockMvcResultMatchers.jsonPath("$[$i].fileDateDir").value(postGenFile.fileDateDir)
+                )
+                .andExpect(
+                    MockMvcResultMatchers.jsonPath("$[$i].originalFileName")
+                        .value(postGenFile.originalFileName)
+                )
+                .andExpect(
+                    MockMvcResultMatchers.jsonPath("$[$i].downloadUrl").value(postGenFile.downloadUrl)
+                )
+                .andExpect(MockMvcResultMatchers.jsonPath("$[$i].publicUrl").value(postGenFile.publicUrl))
+                .andExpect(MockMvcResultMatchers.jsonPath("$[$i].fileName").value(postGenFile.fileName))
         }
     }
 
     @Test
     @DisplayName("새 파일 등록")
     @WithUserDetails("user4")
-    void t2() throws Exception {
-        String newFilePath = SampleResource.IMG_JPG_SAMPLE1.makeCopy();
+    fun t2() {
+        val newFilePath = SampleResource.IMG_JPG_SAMPLE1.makeCopy()
 
-        ResultActions resultActions = mvc
-                .perform(
-                        multipart("/api/v1/posts/9/genFiles/" + PostGenFile.TypeCode.attachment)
-                                .file(new MockMultipartFile("files", SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName(), SampleResource.IMG_JPG_SAMPLE1.getContentType(), new FileInputStream(newFilePath)))
-                )
-                .andDo(print());
+        val resultActions = mvc
+            .perform(
+                MockMvcRequestBuilders.multipart("/api/v1/posts/9/genFiles/" + PostGenFile.TypeCode.attachment)
+                    .file(
+                        MockMultipartFile(
+                            "files",
+                            SampleResource.IMG_JPG_SAMPLE1.originalFileName,
+                            SampleResource.IMG_JPG_SAMPLE1.contentType,
+                            FileInputStream(newFilePath)
+                        )
+                    )
+            )
+            .andDo(MockMvcResultHandlers.print())
 
         resultActions
-                .andExpect(handler().handlerType(ApiV1PostGenFileController.class))
-                .andExpect(handler().methodName("makeNewItems"))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.resultCode").value("201-1"))
-                .andExpect(jsonPath("$.msg").value("1개의 파일이 생성되었습니다."))
-                .andExpect(jsonPath("$.data[0].id").isNumber())
-                .andExpect(jsonPath("$.data[0].createDate").isString())
-                .andExpect(jsonPath("$.data[0].modifyDate").isString())
-                .andExpect(jsonPath("$.data[0].postId").value(9))
-                .andExpect(jsonPath("$.data[0].typeCode").value(PostGenFile.TypeCode.attachment.name()))
-                .andExpect(jsonPath("$.data[0].fileExtTypeCode").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtTypeCode()))
-                .andExpect(jsonPath("$.data[0].fileExtType2Code").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtType2Code()))
-                .andExpect(jsonPath("$.data[0].fileSize").isNumber())
-                .andExpect(jsonPath("$.data[0].fileNo").value(4))
-                .andExpect(jsonPath("$.data[0].fileExt").value(SampleResource.IMG_JPG_SAMPLE1.getFileExt()))
-                .andExpect(jsonPath("$.data[0].fileDateDir").isString())
-                .andExpect(jsonPath("$.data[0].originalFileName").value(SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName()))
-                .andExpect(jsonPath("$.data[0].downloadUrl").isString())
-                .andExpect(jsonPath("$.data[0].publicUrl").isString())
-                .andExpect(jsonPath("$.data[0].fileName").isString());
+            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1PostGenFileController::class.java))
+            .andExpect(MockMvcResultMatchers.handler().methodName("makeNewItems"))
+            .andExpect(MockMvcResultMatchers.status().isCreated())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.resultCode").value("201-1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.msg").value("1개의 파일이 생성되었습니다."))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].id").isNumber())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].createDate").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].modifyDate").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].postId").value(9))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].typeCode").value(PostGenFile.TypeCode.attachment.name))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[0].fileExtTypeCode")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtTypeCode)
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[0].fileExtType2Code")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtType2Code)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].fileSize").isNumber())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].fileNo").value(4))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[0].fileExt").value(SampleResource.IMG_JPG_SAMPLE1.fileExt)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].fileDateDir").isString())
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[0].originalFileName")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.originalFileName)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].downloadUrl").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].publicUrl").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].fileName").isString())
 
-        Ut.file.rm(newFilePath);
+        rm(newFilePath)
     }
 
     @Test
     @DisplayName("단건 조회")
-    void t3() throws Exception {
-        ResultActions resultActions = mvc
-                .perform(
-                        get("/api/v1/posts/9/genFiles/1")
-                )
-                .andDo(print());
+
+    fun t3() {
+        val resultActions = mvc
+            .perform(
+                MockMvcRequestBuilders.get("/api/v1/posts/9/genFiles/1")
+            )
+            .andDo(MockMvcResultHandlers.print())
 
         resultActions
-                .andExpect(handler().handlerType(ApiV1PostGenFileController.class))
-                .andExpect(handler().methodName("item"))
-                .andExpect(status().isOk());
+            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1PostGenFileController::class.java))
+            .andExpect(MockMvcResultMatchers.handler().methodName("item"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
 
-        PostGenFile postGenFile = postService
-                .findById(9)
-                .get()
-                .getGenFileById(1)
-                .get();
+        val postGenFile = postService
+            .findById(9)
+            .get()
+            .getGenFileById(1)
+            .get()
 
         resultActions
-                .andExpect(jsonPath("$.id").value(postGenFile.getId()))
-                .andExpect(jsonPath("$.createDate").value(Matchers.startsWith(postGenFile.getCreateDate().toString().substring(0, 20))))
-                .andExpect(jsonPath("$.modifyDate").value(Matchers.startsWith(postGenFile.getModifyDate().toString().substring(0, 20))))
-                .andExpect(jsonPath("$.postId").value(postGenFile.getPost().getId()))
-                .andExpect(jsonPath("$.typeCode").value(postGenFile.getTypeCode().name()))
-                .andExpect(jsonPath("$.fileExtTypeCode").value(postGenFile.getFileExtTypeCode()))
-                .andExpect(jsonPath("$.fileExtType2Code").value(postGenFile.getFileExtType2Code()))
-                .andExpect(jsonPath("$.fileSize").value(postGenFile.getFileSize()))
-                .andExpect(jsonPath("$.fileNo").value(postGenFile.getFileNo()))
-                .andExpect(jsonPath("$.fileExt").value(postGenFile.getFileExt()))
-                .andExpect(jsonPath("$.fileDateDir").value(postGenFile.getFileDateDir()))
-                .andExpect(jsonPath("$.originalFileName").value(postGenFile.getOriginalFileName()))
-                .andExpect(jsonPath("$.downloadUrl").value(postGenFile.getDownloadUrl()))
-                .andExpect(jsonPath("$.publicUrl").value(postGenFile.getPublicUrl()))
-                .andExpect(jsonPath("$.fileName").value(postGenFile.getFileName()));
+            .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(postGenFile.id))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.createDate")
+                    .value(Matchers.startsWith(postGenFile.createDate.toString().substring(0, 20)))
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.modifyDate")
+                    .value(Matchers.startsWith(postGenFile.modifyDate.toString().substring(0, 20)))
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.postId").value(postGenFile.post.id))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.typeCode").value(postGenFile.typeCode.name))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.fileExtTypeCode").value(postGenFile.fileExtTypeCode))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.fileExtType2Code").value(postGenFile.fileExtType2Code))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.fileSize").value(postGenFile.fileSize))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.fileNo").value(postGenFile.fileNo))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.fileExt").value(postGenFile.fileExt))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.fileDateDir").value(postGenFile.fileDateDir))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.originalFileName").value(postGenFile.originalFileName))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.downloadUrl").value(postGenFile.downloadUrl))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.publicUrl").value(postGenFile.publicUrl))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.fileName").value(postGenFile.fileName))
     }
 
     @Test
     @DisplayName("새 파일 등록(다건)")
     @WithUserDetails("user4")
-    void t4() throws Exception {
-        String newFilePath1 = SampleResource.IMG_JPG_SAMPLE1.makeCopy();
-        String newFilePath2 = SampleResource.IMG_JPG_SAMPLE2.makeCopy();
+    fun t4() {
+        val newFilePath1 = SampleResource.IMG_JPG_SAMPLE1.makeCopy()
+        val newFilePath2 = SampleResource.IMG_JPG_SAMPLE2.makeCopy()
 
-        ResultActions resultActions = mvc
-                .perform(
-                        multipart("/api/v1/posts/9/genFiles/" + PostGenFile.TypeCode.attachment)
-                                .file(new MockMultipartFile("files", SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName(), SampleResource.IMG_JPG_SAMPLE1.getContentType(), new FileInputStream(newFilePath1)))
-                                .file(new MockMultipartFile("files", SampleResource.IMG_JPG_SAMPLE2.getOriginalFileName(), SampleResource.IMG_JPG_SAMPLE2.getContentType(), new FileInputStream(newFilePath2)))
-                )
-                .andDo(print());
+        val resultActions = mvc
+            .perform(
+                MockMvcRequestBuilders.multipart("/api/v1/posts/9/genFiles/" + PostGenFile.TypeCode.attachment)
+                    .file(
+                        MockMultipartFile(
+                            "files",
+                            SampleResource.IMG_JPG_SAMPLE1.originalFileName,
+                            SampleResource.IMG_JPG_SAMPLE1.contentType,
+                            FileInputStream(newFilePath1)
+                        )
+                    )
+                    .file(
+                        MockMultipartFile(
+                            "files",
+                            SampleResource.IMG_JPG_SAMPLE2.originalFileName,
+                            SampleResource.IMG_JPG_SAMPLE2.contentType,
+                            FileInputStream(newFilePath2)
+                        )
+                    )
+            )
+            .andDo(MockMvcResultHandlers.print())
 
         resultActions
-                .andExpect(handler().handlerType(ApiV1PostGenFileController.class))
-                .andExpect(handler().methodName("makeNewItems"))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.resultCode").value("201-1"))
-                .andExpect(jsonPath("$.msg").value("2개의 파일이 생성되었습니다."))
-                .andExpect(jsonPath("$.data[0].id").isNumber())
-                .andExpect(jsonPath("$.data[0].createDate").isString())
-                .andExpect(jsonPath("$.data[0].modifyDate").isString())
-                .andExpect(jsonPath("$.data[0].postId").value(9))
-                .andExpect(jsonPath("$.data[0].typeCode").value(PostGenFile.TypeCode.attachment.name()))
-                .andExpect(jsonPath("$.data[0].fileExtTypeCode").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtTypeCode()))
-                .andExpect(jsonPath("$.data[0].fileExtType2Code").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtType2Code()))
-                .andExpect(jsonPath("$.data[0].fileSize").isNumber())
-                .andExpect(jsonPath("$.data[0].fileNo").value(4))
-                .andExpect(jsonPath("$.data[0].fileExt").value(SampleResource.IMG_JPG_SAMPLE1.getFileExt()))
-                .andExpect(jsonPath("$.data[0].fileDateDir").isString())
-                .andExpect(jsonPath("$.data[0].originalFileName").value(SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName()))
-                .andExpect(jsonPath("$.data[0].downloadUrl").isString())
-                .andExpect(jsonPath("$.data[0].publicUrl").isString())
-                .andExpect(jsonPath("$.data[0].fileName").isString())
-                .andExpect(jsonPath("$.data[0].id").isNumber())
-                .andExpect(jsonPath("$.data[1].createDate").isString())
-                .andExpect(jsonPath("$.data[1].modifyDate").isString())
-                .andExpect(jsonPath("$.data[1].postId").value(9))
-                .andExpect(jsonPath("$.data[1].typeCode").value(PostGenFile.TypeCode.attachment.name()))
-                .andExpect(jsonPath("$.data[1].fileExtTypeCode").value(SampleResource.IMG_JPG_SAMPLE2.getFileExtTypeCode()))
-                .andExpect(jsonPath("$.data[1].fileExtType2Code").value(SampleResource.IMG_JPG_SAMPLE2.getFileExtType2Code()))
-                .andExpect(jsonPath("$.data[1].fileSize").isNumber())
-                .andExpect(jsonPath("$.data[1].fileNo").value(5))
-                .andExpect(jsonPath("$.data[1].fileExt").value(SampleResource.IMG_JPG_SAMPLE2.getFileExt()))
-                .andExpect(jsonPath("$.data[1].fileDateDir").isString())
-                .andExpect(jsonPath("$.data[1].originalFileName").value(SampleResource.IMG_JPG_SAMPLE2.getOriginalFileName()))
-                .andExpect(jsonPath("$.data[1].downloadUrl").isString())
-                .andExpect(jsonPath("$.data[1].publicUrl").isString())
-                .andExpect(jsonPath("$.data[1].fileName").isString());
+            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1PostGenFileController::class.java))
+            .andExpect(MockMvcResultMatchers.handler().methodName("makeNewItems"))
+            .andExpect(MockMvcResultMatchers.status().isCreated())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.resultCode").value("201-1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.msg").value("2개의 파일이 생성되었습니다."))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].id").isNumber())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].createDate").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].modifyDate").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].postId").value(9))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].typeCode").value(PostGenFile.TypeCode.attachment.name))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[0].fileExtTypeCode")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtTypeCode)
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[0].fileExtType2Code")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtType2Code)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].fileSize").isNumber())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].fileNo").value(4))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[0].fileExt").value(SampleResource.IMG_JPG_SAMPLE1.fileExt)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].fileDateDir").isString())
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[0].originalFileName")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.originalFileName)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].downloadUrl").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].publicUrl").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].fileName").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[0].id").isNumber())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].createDate").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].modifyDate").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].postId").value(9))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].typeCode").value(PostGenFile.TypeCode.attachment.name))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[1].fileExtTypeCode")
+                    .value(SampleResource.IMG_JPG_SAMPLE2.fileExtTypeCode)
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[1].fileExtType2Code")
+                    .value(SampleResource.IMG_JPG_SAMPLE2.fileExtType2Code)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].fileSize").isNumber())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].fileNo").value(5))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[1].fileExt").value(SampleResource.IMG_JPG_SAMPLE2.fileExt)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].fileDateDir").isString())
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data[1].originalFileName")
+                    .value(SampleResource.IMG_JPG_SAMPLE2.originalFileName)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].downloadUrl").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].publicUrl").isString())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data[1].fileName").isString())
 
-        Ut.file.rm(newFilePath1);
-        Ut.file.rm(newFilePath2);
+        rm(newFilePath1)
+        rm(newFilePath2)
     }
 
     @Test
     @DisplayName("파일 삭제")
     @WithUserDetails("user4")
-    void t5() throws Exception {
-        PostGenFile postGenFile = postService
-                .findById(9)
-                .get()
-                .getGenFileById(1)
-                .get();
+    fun t5() {
+        val postGenFile = postService
+            .findById(9)
+            .get()
+            .getGenFileById(1)
+            .get()
 
-        String originFilePath = postGenFile.getFilePath();
-        String copyFilePath = AppConfig.getTempDirPath() + "/copy_" + postGenFile.getFileName();
-        Ut.file.copy(originFilePath, copyFilePath);
+        val originFilePath = postGenFile.filePath
+        val copyFilePath = getTempDirPath() + "/copy_" + postGenFile.fileName
+        copy(originFilePath, copyFilePath)
 
-        ResultActions resultActions = mvc
-                .perform(
-                        delete("/api/v1/posts/9/genFiles/1")
-                )
-                .andDo(print());
+        val resultActions = mvc
+            .perform(
+                MockMvcRequestBuilders.delete("/api/v1/posts/9/genFiles/1")
+            )
+            .andDo(MockMvcResultHandlers.print())
 
         resultActions
-                .andExpect(handler().handlerType(ApiV1PostGenFileController.class))
-                .andExpect(handler().methodName("delete"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultCode").value("200-1"))
-                .andExpect(jsonPath("$.msg").value("1번 파일이 삭제되었습니다."));
+            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1PostGenFileController::class.java))
+            .andExpect(MockMvcResultMatchers.handler().methodName("delete"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.resultCode").value("200-1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.msg").value("${postGenFile.id}번 파일이 삭제되었습니다."))
 
-        Ut.file.mv(copyFilePath, originFilePath);
+        mv(copyFilePath, originFilePath)
     }
 
     @Test
     @DisplayName("파일 수정, with id")
     @WithUserDetails("user4")
-    void t6() throws Exception {
-        PostGenFile postGenFile = postService
-                .findById(9)
-                .get()
-                .getGenFileById(1)
-                .get();
+    fun t6() {
+        val postGenFile = postService
+            .findById(9)
+            .get()
+            .getGenFileById(1)
+            .get()
 
-        String originFilePath = postGenFile.getFilePath();
-        String copyFilePath = AppConfig.getTempDirPath() + "/copy_" + postGenFile.getFileName();
-        Ut.file.copy(originFilePath, copyFilePath);
+        val originFilePath = postGenFile.filePath
+        val copyFilePath = getTempDirPath() + "/copy_" + postGenFile.fileName
+        copy(originFilePath, copyFilePath)
 
-        String newFilePath = SampleResource.IMG_JPG_SAMPLE1.makeCopy();
+        val newFilePath = SampleResource.IMG_JPG_SAMPLE1.makeCopy()
 
-        ResultActions resultActions = mvc
-                .perform(
-                        multipart("/api/v1/posts/9/genFiles/1")
-                                .file(new MockMultipartFile(
-                                        "file",
-                                        SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName(),
-                                        SampleResource.IMG_JPG_SAMPLE1.getContentType(),
-                                        new FileInputStream(newFilePath))
-                                )
-                                .with(request -> {
-                                    request.setMethod("PUT");
-                                    return request;
-                                })
+        val resultActions = mvc
+            .perform(
+                MockMvcRequestBuilders.multipart("/api/v1/posts/9/genFiles/1")
+                    .file(
+                        MockMultipartFile(
+                            "file",
+                            SampleResource.IMG_JPG_SAMPLE1.originalFileName,
+                            SampleResource.IMG_JPG_SAMPLE1.contentType,
+                            FileInputStream(newFilePath)
+                        )
+                    )
+                    .with { request: MockHttpServletRequest ->
+                        request.method = "PUT"
+                        request
+                    }
 
-                )
-                .andDo(print());
+            )
+            .andDo(MockMvcResultHandlers.print())
 
         resultActions
-                .andExpect(handler().handlerType(ApiV1PostGenFileController.class))
-                .andExpect(handler().methodName("modify"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultCode").value("200-1"))
-                .andExpect(jsonPath("$.msg").value("%d번 파일이 수정되었습니다.".formatted(postGenFile.getId())))
-                .andExpect(jsonPath("$.data.id").value(postGenFile.getId()))
-                .andExpect(jsonPath("$.data.createDate").value(Matchers.startsWith(postGenFile.getCreateDate().toString().substring(0, 20))))
-                .andExpect(jsonPath("$.data.modifyDate").value(Matchers.startsWith(postGenFile.getModifyDate().toString().substring(0, 20))))
-                .andExpect(jsonPath("$.data.postId").value(postGenFile.getPost().getId()))
-                .andExpect(jsonPath("$.data.typeCode").value(postGenFile.getTypeCode().name()))
-                .andExpect(jsonPath("$.data.fileExtTypeCode").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtTypeCode()))
-                .andExpect(jsonPath("$.data.fileExtType2Code").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtType2Code()))
-                .andExpect(jsonPath("$.data.fileSize").value(postGenFile.getFileSize()))
-                .andExpect(jsonPath("$.data.fileNo").value(postGenFile.getFileNo()))
-                .andExpect(jsonPath("$.data.fileExt").value(SampleResource.IMG_JPG_SAMPLE1.getFileExt()))
-                .andExpect(jsonPath("$.data.fileDateDir").value(postGenFile.getFileDateDir()))
-                .andExpect(jsonPath("$.data.originalFileName").value(SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName()))
-                .andExpect(jsonPath("$.data.downloadUrl").value(postGenFile.getDownloadUrl()))
-                .andExpect(jsonPath("$.data.publicUrl").value(postGenFile.getPublicUrl()))
-                .andExpect(jsonPath("$.data.fileName").value(postGenFile.getFileName()));
+            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1PostGenFileController::class.java))
+            .andExpect(MockMvcResultMatchers.handler().methodName("modify"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.resultCode").value("200-1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.msg").value("${postGenFile.id}번 파일이 수정되었습니다."))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").value(postGenFile.id))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.createDate")
+                    .value(Matchers.startsWith(postGenFile.createDate.toString().substring(0, 20)))
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.modifyDate")
+                    .value(Matchers.startsWith(postGenFile.modifyDate.toString().substring(0, 20)))
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.postId").value(postGenFile.post.id))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.typeCode").value(postGenFile.typeCode.name))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.fileExtTypeCode")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtTypeCode)
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.fileExtType2Code")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtType2Code)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileSize").value(postGenFile.fileSize))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileNo").value(postGenFile.fileNo))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileExt").value(SampleResource.IMG_JPG_SAMPLE1.fileExt))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileDateDir").value(postGenFile.fileDateDir))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.originalFileName")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.originalFileName)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.downloadUrl").value(postGenFile.downloadUrl))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.publicUrl").value(postGenFile.publicUrl))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileName").value(postGenFile.fileName))
 
-        Ut.file.mv(copyFilePath, originFilePath);
+        mv(copyFilePath, originFilePath)
     }
 
     @Test
     @DisplayName("파일 수정, with typeCode And fileNo")
     @WithUserDetails("user4")
-    void t7() throws Exception {
-        PostGenFile postGenFile = postService
-                .findById(9)
-                .get()
-                .getGenFileByTypeCodeAndFileNo(PostGenFile.TypeCode.thumbnail, 1)
-                .get();
+    fun t7() {
+        val postGenFile = postService
+            .findById(9)
+            .get()
+            .getGenFileByTypeCodeAndFileNo(PostGenFile.TypeCode.thumbnail, 1)
+            .get()
 
-        String originFilePath = postGenFile.getFilePath();
-        String copyFilePath = AppConfig.getTempDirPath() + "/copy_" + postGenFile.getFileName();
-        Ut.file.copy(originFilePath, copyFilePath);
+        val originFilePath = postGenFile.filePath
+        val copyFilePath = getTempDirPath() + "/copy_" + postGenFile.fileName
+        copy(originFilePath, copyFilePath)
 
-        String newFilePath = SampleResource.IMG_JPG_SAMPLE1.makeCopy();
+        val newFilePath = SampleResource.IMG_JPG_SAMPLE1.makeCopy()
 
-        ResultActions resultActions = mvc
-                .perform(
-                        multipart("/api/v1/posts/9/genFiles/" + PostGenFile.TypeCode.thumbnail + "/1")
-                                .file(new MockMultipartFile(
-                                        "file",
-                                        SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName(),
-                                        SampleResource.IMG_JPG_SAMPLE1.getContentType(),
-                                        new FileInputStream(newFilePath))
-                                )
-                                .with(request -> {
-                                    request.setMethod("PUT");
-                                    return request;
-                                })
+        val resultActions = mvc
+            .perform(
+                MockMvcRequestBuilders.multipart("/api/v1/posts/9/genFiles/" + PostGenFile.TypeCode.thumbnail + "/1")
+                    .file(
+                        MockMultipartFile(
+                            "file",
+                            SampleResource.IMG_JPG_SAMPLE1.originalFileName,
+                            SampleResource.IMG_JPG_SAMPLE1.contentType,
+                            FileInputStream(newFilePath)
+                        )
+                    )
+                    .with { request: MockHttpServletRequest ->
+                        request.method = "PUT"
+                        request
+                    }
 
-                )
-                .andDo(print());
+            )
+            .andDo(MockMvcResultHandlers.print())
 
         resultActions
-                .andExpect(handler().handlerType(ApiV1PostGenFileController.class))
-                .andExpect(handler().methodName("modify"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultCode").value("200-1"))
-                .andExpect(jsonPath("$.msg").value("%d번 파일이 수정되었습니다.".formatted(postGenFile.getId())))
-                .andExpect(jsonPath("$.data.id").value(postGenFile.getId()))
-                .andExpect(jsonPath("$.data.createDate").value(Matchers.startsWith(postGenFile.getCreateDate().toString().substring(0, 20))))
-                .andExpect(jsonPath("$.data.modifyDate").value(Matchers.startsWith(postGenFile.getModifyDate().toString().substring(0, 20))))
-                .andExpect(jsonPath("$.data.postId").value(postGenFile.getPost().getId()))
-                .andExpect(jsonPath("$.data.typeCode").value(postGenFile.getTypeCode().name()))
-                .andExpect(jsonPath("$.data.fileExtTypeCode").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtTypeCode()))
-                .andExpect(jsonPath("$.data.fileExtType2Code").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtType2Code()))
-                .andExpect(jsonPath("$.data.fileSize").value(postGenFile.getFileSize()))
-                .andExpect(jsonPath("$.data.fileNo").value(postGenFile.getFileNo()))
-                .andExpect(jsonPath("$.data.fileExt").value(SampleResource.IMG_JPG_SAMPLE1.getFileExt()))
-                .andExpect(jsonPath("$.data.fileDateDir").value(postGenFile.getFileDateDir()))
-                .andExpect(jsonPath("$.data.originalFileName").value(SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName()))
-                .andExpect(jsonPath("$.data.downloadUrl").value(postGenFile.getDownloadUrl()))
-                .andExpect(jsonPath("$.data.publicUrl").value(postGenFile.getPublicUrl()))
-                .andExpect(jsonPath("$.data.fileName").value(postGenFile.getFileName()));
+            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1PostGenFileController::class.java))
+            .andExpect(MockMvcResultMatchers.handler().methodName("modify"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.resultCode").value("200-1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.msg").value("${postGenFile.id}번 파일이 수정되었습니다."))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").value(postGenFile.id))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.createDate")
+                    .value(Matchers.startsWith(postGenFile.createDate.toString().substring(0, 20)))
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.modifyDate")
+                    .value(Matchers.startsWith(postGenFile.modifyDate.toString().substring(0, 20)))
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.postId").value(postGenFile.post.id))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.typeCode").value(postGenFile.typeCode.name))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.fileExtTypeCode")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtTypeCode)
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.fileExtType2Code")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtType2Code)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileSize").value(postGenFile.fileSize))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileNo").value(postGenFile.fileNo))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileExt").value(SampleResource.IMG_JPG_SAMPLE1.fileExt))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileDateDir").value(postGenFile.fileDateDir))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.originalFileName")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.originalFileName)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.downloadUrl").value(postGenFile.downloadUrl))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.publicUrl").value(postGenFile.publicUrl))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileName").value(postGenFile.fileName))
 
-        Ut.file.mv(copyFilePath, originFilePath);
+        mv(copyFilePath, originFilePath)
     }
 
     @Test
     @DisplayName("썸네일 이미지가 등록되면 해당 글에서도 직접 참조가 가능해야 한다.")
     @WithUserDetails("user4")
-    void t8() throws Exception {
-        String newFilePath = SampleResource.IMG_JPG_SAMPLE1.makeCopy();
+    fun t8() {
+        val newFilePath = SampleResource.IMG_JPG_SAMPLE1.makeCopy()
 
-        ResultActions resultActions = mvc
-                .perform(
-                        multipart("/api/v1/posts/5/genFiles/" + PostGenFile.TypeCode.thumbnail + "/1")
-                                .file(new MockMultipartFile(
-                                        "file",
-                                        SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName(),
-                                        SampleResource.IMG_JPG_SAMPLE1.getContentType(),
-                                        new FileInputStream(newFilePath))
-                                )
-                                .with(request -> {
-                                    request.setMethod("PUT");
-                                    return request;
-                                })
+        val resultActions = mvc
+            .perform(
+                MockMvcRequestBuilders.multipart("/api/v1/posts/5/genFiles/" + PostGenFile.TypeCode.thumbnail + "/1")
+                    .file(
+                        MockMultipartFile(
+                            "file",
+                            SampleResource.IMG_JPG_SAMPLE1.originalFileName,
+                            SampleResource.IMG_JPG_SAMPLE1.contentType,
+                            FileInputStream(newFilePath)
+                        )
+                    )
+                    .with { request: MockHttpServletRequest ->
+                        request.method = "PUT"
+                        request
+                    }
 
-                )
-                .andDo(print());
+            )
+            .andDo(MockMvcResultHandlers.print())
 
-        PostGenFile postGenFile = postService
-                .findById(5)
-                .get()
-                .getGenFileByTypeCodeAndFileNo(PostGenFile.TypeCode.thumbnail, 1)
-                .get();
+        val postGenFile = postService
+            .findById(5)
+            .get()
+            .getGenFileByTypeCodeAndFileNo(PostGenFile.TypeCode.thumbnail, 1)
+            .get()
 
         resultActions
-                .andExpect(handler().handlerType(ApiV1PostGenFileController.class))
-                .andExpect(handler().methodName("modify"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.resultCode").value("200-1"))
-                .andExpect(jsonPath("$.msg").value("%d번 파일이 생성되었습니다.".formatted(postGenFile.getId())))
-                .andExpect(jsonPath("$.data.id").value(postGenFile.getId()))
-                .andExpect(jsonPath("$.data.createDate").value(Matchers.startsWith(postGenFile.getCreateDate().toString().substring(0, 20))))
-                .andExpect(jsonPath("$.data.modifyDate").value(Matchers.startsWith(postGenFile.getModifyDate().toString().substring(0, 20))))
-                .andExpect(jsonPath("$.data.postId").value(postGenFile.getPost().getId()))
-                .andExpect(jsonPath("$.data.typeCode").value(postGenFile.getTypeCode().name()))
-                .andExpect(jsonPath("$.data.fileExtTypeCode").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtTypeCode()))
-                .andExpect(jsonPath("$.data.fileExtType2Code").value(SampleResource.IMG_JPG_SAMPLE1.getFileExtType2Code()))
-                .andExpect(jsonPath("$.data.fileSize").value(postGenFile.getFileSize()))
-                .andExpect(jsonPath("$.data.fileNo").value(postGenFile.getFileNo()))
-                .andExpect(jsonPath("$.data.fileExt").value(SampleResource.IMG_JPG_SAMPLE1.getFileExt()))
-                .andExpect(jsonPath("$.data.fileDateDir").value(postGenFile.getFileDateDir()))
-                .andExpect(jsonPath("$.data.originalFileName").value(SampleResource.IMG_JPG_SAMPLE1.getOriginalFileName()))
-                .andExpect(jsonPath("$.data.downloadUrl").value(postGenFile.getDownloadUrl()))
-                .andExpect(jsonPath("$.data.publicUrl").value(postGenFile.getPublicUrl()))
-                .andExpect(jsonPath("$.data.fileName").value(postGenFile.getFileName()));
+            .andExpect(MockMvcResultMatchers.handler().handlerType(ApiV1PostGenFileController::class.java))
+            .andExpect(MockMvcResultMatchers.handler().methodName("modify"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.resultCode").value("200-1"))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.msg").value("${postGenFile.id}번 파일이 생성되었습니다."))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.id").value(postGenFile.id))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.createDate")
+                    .value(Matchers.startsWith(postGenFile.createDate.toString().substring(0, 20)))
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.modifyDate")
+                    .value(Matchers.startsWith(postGenFile.modifyDate.toString().substring(0, 20)))
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.postId").value(postGenFile.post.id))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.typeCode").value(postGenFile.typeCode.name))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.fileExtTypeCode")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtTypeCode)
+            )
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.fileExtType2Code")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.fileExtType2Code)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileSize").value(postGenFile.fileSize))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileNo").value(postGenFile.fileNo))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileExt").value(SampleResource.IMG_JPG_SAMPLE1.fileExt))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileDateDir").value(postGenFile.fileDateDir))
+            .andExpect(
+                MockMvcResultMatchers.jsonPath("$.data.originalFileName")
+                    .value(SampleResource.IMG_JPG_SAMPLE1.originalFileName)
+            )
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.downloadUrl").value(postGenFile.downloadUrl))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.publicUrl").value(postGenFile.publicUrl))
+            .andExpect(MockMvcResultMatchers.jsonPath("$.data.fileName").value(postGenFile.fileName))
 
-        assertThat(postGenFile.getPost().getThumbnailGenFile())
-                .isEqualTo(postGenFile);
+        Assertions.assertThat(postGenFile.post.thumbnailGenFile)
+            .isEqualTo(postGenFile)
 
-        assertThat(postGenFile.getPost().getThumbnailImgUrlOrDefault())
-                .isEqualTo(postGenFile.getPublicUrl());
+        Assertions.assertThat(postGenFile.post.thumbnailImgUrlOrDefault)
+            .isEqualTo(postGenFile.publicUrl)
 
-        Ut.file.rm(postGenFile.getFilePath());
+        rm(postGenFile.filePath)
     }
 }

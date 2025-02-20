@@ -1,58 +1,58 @@
-package com.ll.domain.post.genFile.controller;
+package com.ll.domain.post.genFile.controller
 
-import com.ll.domain.member.member.service.MemberService;
-import com.ll.domain.post.genFile.entity.PostGenFile;
-import com.ll.domain.post.post.entity.Post;
-import com.ll.domain.post.post.service.PostService;
-import com.ll.standard.util.Ut;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.transaction.annotation.Transactional;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.ll.domain.post.genFile.entity.PostGenFile
+import com.ll.domain.post.post.service.PostService
+import com.ll.standard.util.Ut.url.removeDomain
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Transactional
-public class PostGenFileControllerTest {
+class PostGenFileControllerTest {
     @Autowired
-    private PostService postService;
+    private lateinit var postService: PostService
+
     @Autowired
-    private MemberService memberService;
-    @Autowired
-    private MockMvc mvc;
+    private lateinit var mvc: MockMvc
 
     @Test
     @DisplayName("다운로드 테스트")
-    void t1() throws Exception {
-        Post post9 = postService.findById(9).get();
+    fun t1() {
+        val post9 = postService.findById(9).get()
 
-        PostGenFile postGenFile1 = post9.getGenFiles().getFirst();
+        val postGenFile1: PostGenFile = post9.genFiles.first()
 
-        String downloadUrl = Ut.url.removeDomain(postGenFile1.getDownloadUrl());
+        val downloadUrl = removeDomain(postGenFile1.downloadUrl)
 
-        ResultActions resultActions = mvc
-                .perform(
-                        get(downloadUrl)
-                )
-                .andDo(print());
+        val resultActions = mvc
+            .perform(
+                MockMvcRequestBuilders.get(downloadUrl)
+            )
+            .andDo(MockMvcResultHandlers.print())
 
         resultActions
-                .andExpect(handler().handlerType(PostGenFileController.class))
-                .andExpect(handler().methodName("download"))
-                .andExpect(status().isOk())
-                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + postGenFile1.getOriginalFileName() + "\""))
-                .andExpect(content().contentType(MediaType.IMAGE_GIF));
+            .andExpect(MockMvcResultMatchers.handler().handlerType(PostGenFileController::class.java))
+            .andExpect(MockMvcResultMatchers.handler().methodName("download"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(
+                MockMvcResultMatchers.header().string(
+                    HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"${postGenFile1.originalFileName}\""
+                )
+            )
+            .andExpect(MockMvcResultMatchers.content().contentType(MediaType.IMAGE_GIF))
     }
 }
