@@ -1,11 +1,7 @@
 package com.ll.global.jpa.entity
 
 import com.ll.standard.util.Ut
-import jakarta.persistence.Column
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.MappedSuperclass
+import jakarta.persistence.*
 
 @MappedSuperclass
 abstract class BaseEntity {
@@ -18,7 +14,7 @@ abstract class BaseEntity {
         get() = _id ?:0
 
     val modelName: String
-        get() = Ut.str.lcfirst(javaClass.simpleName)
+        get() = Ut.str.lcfirst(javaClass.simpleName!!)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
