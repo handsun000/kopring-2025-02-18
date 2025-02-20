@@ -1,53 +1,50 @@
-package com.ll.domain.member.member.service;
+package com.ll.domain.member.member.service
 
-import com.ll.domain.member.member.entity.Member;
-import com.ll.standard.util.Ut;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
+import com.ll.domain.member.member.entity.Member
+import com.ll.standard.util.Ut.jwt.payload
+import com.ll.standard.util.Ut.jwt.toString
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Service
 
 @Service
-public class AuthTokenService {
-    @Value("${custom.jwt.secretKey}")
-    private String jwtSecretKey;
+class AuthTokenService(
+    @Value("\${custom.jwt.secretKey}")
+    private val jwtSecretKey: String,
 
-    @Value("${custom.accessToken.expirationSeconds}")
-    private long accessTokenExpirationSeconds;
+    @Value("\${custom.accessToken.expirationSeconds}")
+    private val accessTokenExpirationSeconds: Long,
+) {
 
-    String genAccessToken(Member member) {
-        long id = member.getId();
-        String username = member.getUsername();
-        String nickname = member.getNickname();
+    fun genAccessToken(member: Member): String {
+        val id = member.id
+        val username = member.username
+        val nickname = member.nickname
 
-        return Ut.jwt.toString(
-                jwtSecretKey,
-                accessTokenExpirationSeconds,
-                Map.of(
-                        "id", id,
-                        "username", username,
-                        "nickname", nickname,
-                        "authorities", member.getAuthoritiesAsStringList()
-                )
-        );
-    }
-
-    Map<String, Object> payload(String accessToken) {
-        Map<String, Object> parsedPayload = Ut.jwt.payload(jwtSecretKey, accessToken);
-
-        if (parsedPayload == null) return null;
-
-        long id = (long) (Integer) parsedPayload.get("id");
-        String username = (String) parsedPayload.get("username");
-        String nickname = (String) parsedPayload.get("nickname");
-        List<String> authorities = (List<String>) parsedPayload.get("authorities");
-
-        return Map.of(
+        return toString(
+            jwtSecretKey,
+            accessTokenExpirationSeconds,
+            java.util.Map.of(
                 "id", id,
                 "username", username,
                 "nickname", nickname,
-                "authorities", authorities
-        );
+                "authorities", member.authoritiesAsStringList
+            )
+        )
+    }
+
+    fun payload(accessToken: String): Map<String, Any?>? {
+        val parsedPayload = payload(jwtSecretKey, accessToken) ?: return null
+
+        val id = (parsedPayload["id"] as Int).toLong()
+        val username = parsedPayload["username"] as String
+        val nickname = parsedPayload["nickname"] as String
+        val authorities = parsedPayload["authorities"] as List<String>
+
+        return mapOf(
+            "id" to id,
+            "username" to username,
+            "nickname" to nickname,
+            "authorities" to authorities
+        )
     }
 }

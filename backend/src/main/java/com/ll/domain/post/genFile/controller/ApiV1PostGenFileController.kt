@@ -1,213 +1,201 @@
-package com.ll.domain.post.genFile.controller;
+package com.ll.domain.post.genFile.controller
 
-import com.ll.domain.member.member.entity.Member;
-import com.ll.domain.post.genFile.dto.PostGenFileDto;
-import com.ll.domain.post.genFile.entity.PostGenFile;
-import com.ll.domain.post.post.entity.Post;
-import com.ll.domain.post.post.service.PostService;
-import com.ll.global.app.AppConfig;
-import com.ll.global.exceptions.ServiceException;
-import com.ll.global.rq.Rq;
-import com.ll.global.rsData.RsData;
-import com.ll.standard.base.Empty;
-import com.ll.standard.util.Ut;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
-import org.springframework.lang.NonNull;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+import com.ll.domain.post.genFile.dto.PostGenFileDto
+import com.ll.domain.post.genFile.entity.PostGenFile
+import com.ll.domain.post.post.service.PostService
+import com.ll.global.app.AppConfig.Companion.getTempDirPath
+import com.ll.global.exceptions.ServiceException
+import com.ll.global.rq.Rq
+import com.ll.global.rsData.RsData
+import com.ll.standard.base.Empty
+import com.ll.standard.util.Ut.file.getFileExtTypeCodeFromFilePath
+import com.ll.standard.util.Ut.file.rm
+import com.ll.standard.util.Ut.file.toFile
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.MediaType
+import org.springframework.lang.NonNull
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/api/v1/posts/{postId}/genFiles")
-@RequiredArgsConstructor
 @Tag(name = "ApiV1PostGenFileController", description = "API 글 파일 컨트롤러")
 @SecurityRequirement(name = "bearerAuth")
-public class ApiV1PostGenFileController {
-    private final PostService postService;
-    private final Rq rq;
+class ApiV1PostGenFileController(
+    private val postService: PostService,
+    private val rq: Rq,
+) {
 
-    @PostMapping(value = "/{typeCode}", consumes = MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = ["/{typeCode}"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @Operation(summary = "다건등록")
     @Transactional
-    public RsData<List<PostGenFileDto>> makeNewItems(
-            @PathVariable long postId,
-            @PathVariable PostGenFile.TypeCode typeCode,
-            @NonNull @RequestPart("files") MultipartFile[] files
-    ) {
-        Member actor = rq.getActor();
+    fun makeNewItems(
+        @PathVariable postId: Long,
+        @PathVariable typeCode: PostGenFile.TypeCode,
+        @NonNull @RequestPart("files") files: Array<MultipartFile>,
+    ): RsData<List<PostGenFileDto>> {
+        val actor = rq.actor!!
 
-        Post post = postService.findById(postId).orElseThrow(
-                () -> new ServiceException("404-1", "%d번 글은 존재하지 않습니다.".formatted(postId))
-        );
+        val post = postService.findById(postId)
+            .orElseThrow { ServiceException("404-1", "${postId}번 글은 존재하지 않습니다.") }
 
-        post.checkActorCanMakeNewGenFile(actor);
+        post.checkActorCanMakeNewGenFile(actor)
 
-        List<PostGenFile> postGenFiles = new ArrayList<>();
+        val postGenFiles: MutableList<PostGenFile> = ArrayList()
 
-        for (MultipartFile file : files) {
-            if (file.isEmpty()) continue;
+        for (file in files) {
+            if (file.isEmpty) continue
 
-            String filePath = Ut.file.toFile(file, AppConfig.getTempDirPath());
+            val filePath = toFile(file, getTempDirPath())
 
             postGenFiles.add(
-                    post.addGenFile(
-                            typeCode,
-                            filePath
-                    ));
+                post.addGenFile(
+                    typeCode,
+                    filePath
+                )
+            )
         }
 
-        postService.flush();
+        postService.flush()
 
-        return new RsData<>(
-                "201-1",
-                "%d개의 파일이 생성되었습니다.".formatted(postGenFiles.size()),
-                postGenFiles.stream().map(PostGenFileDto::new).toList()
-        );
+        return RsData(
+            "201-1",
+            "${postGenFiles.size}개의 파일이 생성되었습니다.",
+            postGenFiles
+                .map { PostGenFileDto(it) }
+                .toList()
+        )
     }
 
 
     @GetMapping
     @Transactional(readOnly = true)
     @Operation(summary = "다건조회")
-    public List<PostGenFileDto> items(
-            @PathVariable long postId
-    ) {
-        Post post = postService.findById(postId).orElseThrow(
-                () -> new ServiceException("404-1", "%d번 글은 존재하지 않습니다.".formatted(postId))
-        );
+    fun items(
+        @PathVariable postId: Long,
+    ): List<PostGenFileDto> {
+        val post = postService.findById(postId)
+            .orElseThrow { ServiceException("404-1", "${postId}번 글은 존재하지 않습니다.") }
 
         return post
-                .getGenFiles()
-                .stream()
-                .map(PostGenFileDto::new)
-                .toList();
+            .genFiles
+            .map { PostGenFileDto(it) }
+            .toList()
     }
 
 
     @GetMapping("/{id}")
     @Transactional(readOnly = true)
     @Operation(summary = "단건조회")
-    public PostGenFileDto item(
-            @PathVariable long postId,
-            @PathVariable long id
-    ) {
-        Post post = postService.findById(postId).orElseThrow(
-                () -> new ServiceException("404-1", "%d번 글은 존재하지 않습니다.".formatted(postId))
-        );
+    fun item(
+        @PathVariable postId: Long,
+        @PathVariable id: Long,
+    ): PostGenFileDto {
+        val post = postService.findById(postId)
+            .orElseThrow { ServiceException("404-1", "${postId}번 글은 존재하지 않습니다.") }
 
-        PostGenFile postGenFile = post.getGenFileById(id).orElseThrow(
-                () -> new ServiceException("404-2", "%d번 파일은 존재하지 않습니다.".formatted(id))
-        );
+        val postGenFile =
+            post.getGenFileById(id).orElseThrow { ServiceException("404-2", "${id}번 파일은 존재하지 않습니다.") }
 
-        return new PostGenFileDto(postGenFile);
+        return PostGenFileDto(postGenFile)
     }
 
 
     @DeleteMapping("/{id}")
     @Transactional
     @Operation(summary = "삭제")
-    public RsData<Empty> delete(
-            @PathVariable long postId,
-            @PathVariable long id
-    ) {
-        Post post = postService.findById(postId).orElseThrow(
-                () -> new ServiceException("404-1", "%d번 글은 존재하지 않습니다.".formatted(postId))
-        );
+    fun delete(
+        @PathVariable postId: Long,
+        @PathVariable id: Long,
+    ): RsData<Empty> {
+        val post = postService.findById(postId)
+            .orElseThrow { ServiceException("404-1", "${postId}번 글은 존재하지 않습니다.") }
 
-        PostGenFile postGenFile = post.getGenFileById(id).orElseThrow(
-                () -> new ServiceException("404-2", "%d번 파일은 존재하지 않습니다.".formatted(id))
-        );
+        val postGenFile =
+            post.getGenFileById(id).orElseThrow { ServiceException("404-2", "${id}번 파일은 존재하지 않습니다.") }
 
-        post.deleteGenFile(postGenFile);
+        post.deleteGenFile(postGenFile)
 
-        return new RsData<>(
-                "200-1",
-                "%d번 파일이 삭제되었습니다.".formatted(id)
-        );
+        return RsData(
+            "200-1",
+            "${id}번 파일이 삭제되었습니다."
+        )
     }
 
 
-    @PutMapping(value = "/{id}", consumes = MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = ["/{id}"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @Transactional
     @Operation(summary = "수정")
-    public RsData<PostGenFileDto> modify(
-            @PathVariable long postId,
-            @PathVariable long id,
-            @NonNull @RequestPart("file") MultipartFile file
-    ) {
-        Post post = postService.findById(postId).orElseThrow(
-                () -> new ServiceException("404-1", "%d번 글은 존재하지 않습니다.".formatted(postId))
-        );
+    fun modify(
+        @PathVariable postId: Long,
+        @PathVariable id: Long,
+        @NonNull @RequestPart("file") file: MultipartFile,
+    ): RsData<PostGenFileDto> {
+        val post = postService.findById(postId)
+            .orElseThrow { ServiceException("404-1", "${postId}번 글은 존재하지 않습니다.") }
 
-        PostGenFile postGenFile = post.getGenFileById(id).orElseThrow(
-                () -> new ServiceException("404-2", "%d번 파일은 존재하지 않습니다.".formatted(id))
-        );
+        val postGenFile =
+            post.getGenFileById(id).orElseThrow { ServiceException("404-2", "${id}번 파일은 존재하지 않습니다.") }
 
-        String filePath = Ut.file.toFile(file, AppConfig.getTempDirPath());
+        val filePath = toFile(file, getTempDirPath())
 
-        post.modifyGenFile(postGenFile, filePath);
+        post.modifyGenFile(postGenFile, filePath)
 
-        return new RsData<>(
-                "200-1",
-                "%d번 파일이 수정되었습니다.".formatted(id),
-                new PostGenFileDto(postGenFile)
-        );
+        return RsData(
+            "200-1",
+            "${id}번 파일이 수정되었습니다.",
+            PostGenFileDto(postGenFile)
+        )
     }
 
-    @PutMapping(value = "/{typeCode}/{fileNo}", consumes = MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = ["/{typeCode}/{fileNo}"], consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @Transactional
     @Operation(summary = "수정")
-    public RsData<PostGenFileDto> modify(
-            @PathVariable long postId,
-            @PathVariable PostGenFile.TypeCode typeCode,
-            @PathVariable int fileNo,
-            @NonNull @RequestPart("file") MultipartFile file,
-            @RequestParam(defaultValue = "") String metaStr
-    ) {
+    fun modify(
+        @PathVariable postId: Long,
+        @PathVariable typeCode: PostGenFile.TypeCode,
+        @PathVariable fileNo: Int,
+        @NonNull @RequestPart("file") file: MultipartFile,
+        @RequestParam(defaultValue = "") metaStr: String,
+    ): RsData<PostGenFileDto> {
         if (typeCode == PostGenFile.TypeCode.thumbnail && fileNo > 1) {
-            throw new ServiceException("400-1", "썸네일은 1개만 등록할 수 있습니다.");
+            throw ServiceException("400-1", "썸네일은 1개만 등록할 수 있습니다.")
         }
 
-        Post post = postService.findById(postId).orElseThrow(
-                () -> new ServiceException("404-1", "%d번 글은 존재하지 않습니다.".formatted(postId))
-        );
+        val post = postService.findById(postId)
+            .orElseThrow { ServiceException("404-1", "${postId}번 글은 존재하지 않습니다.") }
 
-        String filePath = Ut.file.toFile(
-                file,
-                AppConfig.getTempDirPath(),
-                metaStr
-        );
+        val filePath = toFile(
+            file,
+            getTempDirPath(),
+            metaStr
+        )
 
-        if (typeCode == PostGenFile.TypeCode.thumbnail && !Ut.file.getFileExtTypeCodeFromFilePath(filePath).equals("img")) {
-            Ut.file.rm(filePath);
+        if (typeCode == PostGenFile.TypeCode.thumbnail && getFileExtTypeCodeFromFilePath(filePath) != "img") {
+            rm(filePath)
 
-            throw new ServiceException("400-2", "썸네일은 이미지 파일만 등록할 수 있습니다.");
+            throw ServiceException("400-2", "썸네일은 이미지 파일만 등록할 수 있습니다.")
         }
 
-        PostGenFile postGenFile = post.putGenFile(typeCode, fileNo, filePath);
+        val postGenFile = post.putGenFile(typeCode, fileNo, filePath)
 
-        boolean justCreated = postGenFile.getId() == 0;
+        val justCreated = postGenFile.id == 0L
 
         if (typeCode == PostGenFile.TypeCode.thumbnail) {
             // 만약에 등록된게 썸네일 이라면
             // 해당 썸네일의 주인(글)에도 직접 참조를 넣는다.
-            post.setThumbnailGenFile(postGenFile);
+            post.thumbnailGenFile = postGenFile
         }
 
-        postService.flush();
+        postService.flush()
 
-        return new RsData<>(
-                "200-1",
-                justCreated ? "%d번 파일이 생성되었습니다.".formatted(postGenFile.getId()) : "%d번 파일이 수정되었습니다.".formatted(postGenFile.getId()),
-                new PostGenFileDto(postGenFile)
-        );
+        return RsData(
+            "200-1",
+            if (justCreated) "${postGenFile.id}번 파일이 생성되었습니다." else "${postGenFile.id}번 파일이 수정되었습니다.",
+            PostGenFileDto(postGenFile)
+        )
     }
 }

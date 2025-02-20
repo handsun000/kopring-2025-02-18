@@ -53,7 +53,7 @@ class MemberService(
         return memberRepository.findByApiKey(apiKey)
     }
 
-    fun genAccessToken(member: Member?): String {
+    fun genAccessToken(member: Member): String {
         return authTokenService.genAccessToken(member)
     }
 
@@ -61,7 +61,7 @@ class MemberService(
         return member.apiKey + " " + genAccessToken(member)
     }
 
-    fun getMemberFromAccessToken(accessToken: String?): Member? {
+    fun getMemberFromAccessToken(accessToken: String): Member? {
         val payload = authTokenService.payload(accessToken) ?: return null
 
         val id = payload["id"] as Long
