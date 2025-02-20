@@ -18,8 +18,10 @@ abstract class BaseEntity {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
-        other as BaseEntity
+        if (other == null || other !is BaseEntity) return false
+
+        if (modelName != other.modelName) return false
+
         return id == other.id
     }
 

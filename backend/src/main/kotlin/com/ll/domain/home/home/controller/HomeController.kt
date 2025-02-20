@@ -28,9 +28,9 @@ class HomeController {
             { obj: Iterator<String?> -> obj.hasNext() },
             { it: Iterator<String> -> it }
         ).flatMap { it: Iterator<String> -> Stream.of(it.next()) }
-            .map { attributeName: String ->
-                val attributeValue = session.getAttribute(attributeName)
-                "$attributeName = $attributeValue"
+            .map {
+                val attributeValue = session.getAttribute(it)
+                "$it = $attributeValue"
             }
             .collect(Collectors.joining("\n", "Session Attributes:\n", ""))
 

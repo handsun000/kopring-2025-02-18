@@ -226,7 +226,7 @@ object Ut {
         fun getExtensionFromResponse(response: HttpResponse<*>): String {
             return response.headers()
                 .firstValue("Content-Type")
-                .map { contentType -> MIME_TYPE_MAP.getOrDefault(contentType, "tmp") }
+                .map { MIME_TYPE_MAP.getOrDefault(it, "tmp") }
                 .orElse("tmp");
         }
 

@@ -151,7 +151,7 @@ class Post : BaseTime {
         val fileExtType2Code = Ut.file.getFileExtType2CodeFromFileExt(fileExt)
 
         var metadataStr = Ut.file.getMetadata(filePath).entries.stream()
-            .map { entry -> entry.key + "=" + entry.value }
+            .map { it.key + "=" + it.value }
             .collect(Collectors.joining("&"))
 
         if (Ut.str.isNotBlank(metadataStrFromFileName)) {
@@ -202,8 +202,8 @@ class Post : BaseTime {
 
     private fun getNextGenFileNo(typeCode: PostGenFile.TypeCode): Int {
         return genFiles.stream()
-            .filter { genFile -> genFile.typeCode == typeCode }
-            .mapToInt { genFile -> genFile.fileNo }
+            .filter { it.typeCode == typeCode }
+            .mapToInt { it.fileNo }
             .max()
             .orElse(0) + 1
     }

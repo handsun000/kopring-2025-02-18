@@ -77,7 +77,7 @@ class AuthTokenServiceTest {
     fun t3() {
         val payload = java.util.Map.of<String, Any>("name", "Paul", "age", 23)
 
-        val jwtStr = toString(jwtSecretKey, accessTokenExpirationSeconds!!, payload)
+        val jwtStr = toString(jwtSecretKey, accessTokenExpirationSeconds, payload)
 
         Assertions.assertThat(jwtStr).isNotBlank()
         Assertions.assertThat(isValid(jwtSecretKey, jwtStr)).isTrue()

@@ -71,10 +71,10 @@ class GlobalExceptionHandler {
         val message = ex.bindingResult
             .allErrors
             .stream()
-            .filter { error: ObjectError? -> error is FieldError }
-            .map { error: ObjectError -> error as FieldError }
-            .map { error: FieldError -> error.field + "-" + error.code + "-" + error.defaultMessage }
-            .sorted(Comparator.comparing { obj: String -> obj })
+            .filter { it is FieldError }
+            .map { it as FieldError }
+            .map { it.field + "-" + it.code + "-" + it.defaultMessage }
+            .sorted(Comparator.comparing { it })
             .collect(Collectors.joining("\n"))
 
         return ResponseEntity
