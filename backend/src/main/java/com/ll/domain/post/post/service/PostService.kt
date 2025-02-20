@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 class PostService(
     private val postRepository: PostRepository
 ) {
-
     fun count(): Long {
         return postRepository.count()
     }
@@ -56,11 +55,11 @@ class PostService(
         postRepository.delete(post)
     }
 
-    fun modify(post: Post, title: String?, content: String?, published: Boolean, listed: Boolean) {
+    fun modify(post: Post, title: String, content: String, published: Boolean, listed: Boolean) {
         val wasTemp = post.isTemp
 
-        post.title = title!!
-        post.content = content!!
+        post.title = title
+        post.content = content
         post.published = published
         post.listed = listed
 
@@ -122,14 +121,14 @@ class PostService(
         if (isNew.get()) {
             return RsData(
                 "201-1",
-                "%d번 임시글이 생성되었습니다.".formatted(post.id),
+                "${post.id}번 임시글이 생성되었습니다.",
                 post
             )
         }
 
         return RsData(
             "200-1",
-            "%d번 임시글을 불러옵니다.".formatted(post.id),
+            "${post.id}번 임시글을 불러옵니다.",
             post
         )
     }

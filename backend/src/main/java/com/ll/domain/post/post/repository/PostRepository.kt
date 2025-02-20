@@ -1,20 +1,22 @@
-package com.ll.domain.post.post.repository;
+package com.ll.domain.post.post.repository
 
-import com.ll.domain.member.member.entity.Member;
-import com.ll.domain.post.post.entity.Post;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.ll.domain.member.member.entity.Member
+import com.ll.domain.post.post.entity.Post
+import org.springframework.data.jpa.repository.JpaRepository
+import java.util.*
 
-import java.util.List;
-import java.util.Optional;
+interface PostRepository : JpaRepository<Post, Long>, PostRepositoryCustom {
+    fun findAllByOrderByIdDesc(): List<Post>
 
-public interface PostRepository extends JpaRepository<Post, Long>, PostRepositoryCustom {
-    List<Post> findAllByOrderByIdDesc();
+    fun findFirstByOrderByIdDesc(): Optional<Post>
 
-    Optional<Post> findFirstByOrderByIdDesc();
+    fun findTop1ByAuthorAndPublishedAndTitleOrderByIdDesc(
+        author: Member,
+        published: Boolean,
+        title: String
+    ): Optional<Post>
 
-    Optional<Post> findTop1ByAuthorAndPublishedAndTitleOrderByIdDesc(Member author, boolean published, String title);
+    fun countByPublished(published: Boolean): Long
 
-    long countByPublished(boolean published);
-
-    long countByListed(boolean listed);
+    fun countByListed(listed: Boolean): Long
 }
