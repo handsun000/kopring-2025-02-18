@@ -1,125 +1,116 @@
-package com.ll.global.security;
+package com.ll.global.security
 
-import com.ll.global.app.AppConfig;
-import com.ll.global.rsData.RsData;
-import com.ll.standard.util.Ut;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
+import com.ll.global.app.AppConfig
+import com.ll.global.rsData.RsData
+import com.ll.standard.base.Empty
+import com.ll.standard.util.Ut
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.invoke
+import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.web.AuthenticationEntryPoint
+import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.access.AccessDeniedHandler
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
-@RequiredArgsConstructor
-public class SecurityConfig {
-    private final CustomAuthenticationFilter customAuthenticationFilter;
-    private final CustomOAuth2AuthenticationSuccessHandler customOAuth2AuthenticationSuccessHandler;
-    private final CustomAuthorizationRequestResolver customAuthorizationRequestResolver;
-
+class SecurityConfig(
+    private val customAuthenticationFilter: CustomAuthenticationFilter,
+    private val customOAuth2AuthenticationSuccessHandler: CustomOAuth2AuthenticationSuccessHandler,
+    private val customAuthorizationRequestResolver: CustomAuthorizationRequestResolver
+) {
     @Bean
-    public SecurityFilterChain baseSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(authorizeRequests ->
-                        authorizeRequests
-                                .requestMatchers(HttpMethod.GET, "/api/*/posts/{id:\\d+}", "/api/*/posts", "/api/*/posts/{postId:\\d+}/comments", "/api/*/posts/{postId:\\d+}/genFiles", "/api/*/posts/{postId:\\d+}/genFiles/{id:\\d+}")
-                                .permitAll()
-                                .requestMatchers("/api/*/members/login", "/api/*/members/logout", "/api/*/members/join")
-                                .permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/*/posts/statistics")
-                                .hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.GET, "/api/*/adm/members/**")
-                                .hasRole("ADMIN")
-                                .requestMatchers("/api/*/**")
-                                .authenticated()
-                                .anyRequest()
-                                .permitAll()
-                )
-                .headers(
-                        headers ->
-                                headers.frameOptions(
-                                        frameOptions ->
-                                                frameOptions.sameOrigin()
-                                )
-                )
-                .csrf(
-                        csrf ->
-                                csrf.disable()
-                )
-                .oauth2Login(
-                        oauth2Login -> oauth2Login
-                                .successHandler(customOAuth2AuthenticationSuccessHandler)
-                                .authorizationEndpoint(
-                                        authorizationEndpoint ->
-                                                authorizationEndpoint
-                                                        .authorizationRequestResolver(customAuthorizationRequestResolver)
-                                )
-                )
-                .formLogin(
-                        AbstractHttpConfigurer::disable
-                )
-                .sessionManagement((sessionManagement) -> sessionManagement
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .addFilterBefore(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(
-                        exceptionHandling -> exceptionHandling
-                                .authenticationEntryPoint(
-                                        (request, response, authException) -> {
-                                            response.setContentType("application/json;charset=UTF-8");
+    fun baseSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http {
+            authorizeHttpRequests {
+                authorize(HttpMethod.GET, "/api/*/posts/{id:\\d+}", permitAll)
+                authorize(HttpMethod.GET, "/api/*/posts", permitAll)
+                authorize(HttpMethod.GET, "/api/*/posts/{postId:\\d+}/comments", permitAll)
+                authorize(HttpMethod.GET, "/api/*/posts/{postId:\\d+}/genFiles", permitAll)
+                authorize(HttpMethod.GET, "/api/*/posts/{postId:\\d+}/genFiles/{id:\\d+}", permitAll)
+                authorize("/api/*/members/login", permitAll)
+                authorize("/api/*/members/logout", permitAll)
+                authorize("/api/*/members/join", permitAll)
+                authorize(HttpMethod.GET, "/api/*/posts/statistics", hasRole("ADMIN"))
+                authorize(HttpMethod.GET, "/api/*/adm/members/**", hasRole("ADMIN"))
+                authorize("/api/*/**", authenticated)
+                authorize(anyRequest, permitAll)
+            }
 
-                                            response.setStatus(401);
-                                            response.getWriter().write(
-                                                    Ut.json.toString(
-                                                            new RsData("401-1", "사용자 인증정보가 올바르지 않습니다.")
-                                                    )
-                                            );
-                                        }
-                                )
-                                .accessDeniedHandler(
-                                        (request, response, accessDeniedException) -> {
-                                            response.setContentType("application/json;charset=UTF-8");
+            headers {
+                frameOptions {
+                    sameOrigin = true
+                }
+            }
 
-                                            response.setStatus(403);
-                                            response.getWriter().write(
-                                                    Ut.json.toString(
-                                                            new RsData("403-1", "권한이 없습니다.")
-                                                    )
-                                            );
-                                        }
-                                )
-                );
+            csrf { disable() }
 
-        return http.build();
+            oauth2Login {
+                authenticationSuccessHandler = customOAuth2AuthenticationSuccessHandler
+
+                authorizationEndpoint {
+                    authorizationRequestResolver = customAuthorizationRequestResolver
+                }
+            }
+
+            formLogin { disable() }
+
+            sessionManagement {
+                sessionCreationPolicy = SessionCreationPolicy.STATELESS
+            }
+
+            addFilterBefore<UsernamePasswordAuthenticationFilter>(customAuthenticationFilter)
+
+            exceptionHandling {
+                authenticationEntryPoint = AuthenticationEntryPoint { request, response, authException ->
+                    response.contentType = "application/json;charset=UTF-8"
+                    response.status = 401
+                    response.writer.write(
+                        Ut.json.toString(
+                            RsData("401-1", "사용자 인증정보가 올바르지 않습니다.", Empty())
+                        )
+                    )
+                }
+
+                accessDeniedHandler = AccessDeniedHandler { request, response, accessDeniedException ->
+                    response.contentType = "application/json;charset=UTF-8"
+                    response.status = 403
+                    response.writer.write(
+                        Ut.json.toString(
+                            RsData("403-1", "권한이 없습니다.", Empty())
+                        )
+                    )
+                }
+            }
+        }
+
+        return http.build()
     }
 
     @Bean
-    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+    fun corsConfigurationSource(): UrlBasedCorsConfigurationSource {
+        val configuration = CorsConfiguration()
 
         // 허용할 오리진 설정
-        configuration.setAllowedOrigins(Arrays.asList("https://cdpn.io", AppConfig.getSiteFrontUrl()));
+        configuration.allowedOrigins = listOf("https://cdpn.io", AppConfig.getSiteFrontUrl())
 
         // 허용할 HTTP 메서드 설정
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
 
         // 자격 증명 허용 설정
-        configuration.setAllowCredentials(true);
+        configuration.allowCredentials = true
 
         // 허용할 헤더 설정
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.allowedHeaders = listOf("*")
 
         // CORS 설정을 소스에 등록
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/api/**", configuration)
 
-        return source;
+        return source
     }
 }

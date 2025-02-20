@@ -1,50 +1,49 @@
-package com.ll.global.security;
 
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
-import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
-import org.springframework.stereotype.Component;
+package com.ll.global.security
 
-import java.util.HashMap;
-import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest
+import org.springframework.stereotype.Component
 
 @Component
-public class CustomAuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
-    private final DefaultOAuth2AuthorizationRequestResolver defaultResolver;
+class CustomAuthorizationRequestResolver(
+    clientRegistrationRepository: ClientRegistrationRepository
+) : OAuth2AuthorizationRequestResolver {
 
-    public CustomAuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
-        this.defaultResolver = new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
+    private val defaultResolver =
+        DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization")
+
+    override fun resolve(request: HttpServletRequest?): OAuth2AuthorizationRequest? {
+        val authorizationRequest = request?.let { defaultResolver.resolve(it) }
+        return customizeAuthorizationRequest(authorizationRequest, request)
     }
 
-    @Override
-    public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
-        OAuth2AuthorizationRequest authorizationRequest = defaultResolver.resolve(request);
-        return customizeAuthorizationRequest(authorizationRequest, request);
+    override fun resolve(request: HttpServletRequest?, clientRegistrationId: String?): OAuth2AuthorizationRequest? {
+        val authorizationRequest = request?.let { clientRegistrationId?.let { id -> defaultResolver.resolve(it, id) } }
+        return customizeAuthorizationRequest(authorizationRequest, request)
     }
 
-    @Override
-    public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
-        OAuth2AuthorizationRequest authorizationRequest = defaultResolver.resolve(request, clientRegistrationId);
-        return customizeAuthorizationRequest(authorizationRequest, request);
-    }
-
-    private OAuth2AuthorizationRequest customizeAuthorizationRequest(OAuth2AuthorizationRequest authorizationRequest, HttpServletRequest request) {
+    private fun customizeAuthorizationRequest(
+        authorizationRequest: OAuth2AuthorizationRequest?,
+        request: HttpServletRequest?
+    ): OAuth2AuthorizationRequest? {
         if (authorizationRequest == null || request == null) {
-            return null;
+            return null
         }
 
-        String redirectUrl = request.getParameter("redirectUrl");
+        val redirectUrl = request.getParameter("redirectUrl")
 
-        Map<String, Object> additionalParameters = new HashMap<>(authorizationRequest.getAdditionalParameters());
-        if (redirectUrl != null && !redirectUrl.isEmpty()) {
-            additionalParameters.put("state", redirectUrl);
+        val additionalParameters = authorizationRequest.additionalParameters.toMutableMap()
+        if (!redirectUrl.isNullOrEmpty()) {
+            additionalParameters["state"] = redirectUrl
         }
 
         return OAuth2AuthorizationRequest.from(authorizationRequest)
-                .additionalParameters(additionalParameters)
-                .state(redirectUrl)
-                .build();
+            .additionalParameters(additionalParameters)
+            .state(redirectUrl)
+            .build()
     }
 }

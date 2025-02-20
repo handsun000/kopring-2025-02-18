@@ -1,20 +1,16 @@
-package com.ll.global.app;
+package com.ll.global.app
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.context.annotation.Configuration
 
-import java.util.List;
-
-@Data
 @Configuration
 @ConfigurationProperties(prefix = "custom")
-public class CustomConfigProperties {
-    public record NotProdMember(String username, String nickname, String profileImgUrl) {
-        public String apiKey() {
-            return username;
+class CustomConfigProperties(
+    val notProdMembers: List<NotProdMember>
+) {
+    data class NotProdMember(val username: String, val nickname: String, val profileImgUrl: String) {
+        fun apiKey(): String {
+            return username
         }
     }
-
-    private List<NotProdMember> notProdMembers;
 }

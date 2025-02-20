@@ -1,101 +1,86 @@
-package com.ll.global.security;
 
-import com.ll.domain.member.member.entity.Member;
-import com.ll.domain.member.member.service.MemberService;
-import com.ll.global.rq.Rq;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+package com.ll.global.security
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
+import com.ll.domain.member.member.entity.Member
+import com.ll.domain.member.member.service.MemberService
+import com.ll.global.rq.Rq
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import org.springframework.stereotype.Component
+import org.springframework.web.filter.OncePerRequestFilter
 
 @Component
-@RequiredArgsConstructor
-public class CustomAuthenticationFilter extends OncePerRequestFilter {
-    private final MemberService memberService;
-    private final Rq rq;
+class CustomAuthenticationFilter(
+    private val memberService: MemberService,
+    private val rq: Rq
+) : OncePerRequestFilter() {
 
+    private data class AuthTokens(val apiKey: String, val accessToken: String)
 
-    record AuthTokens(String apiKey, String accessToken) {
-    }
+    private fun getAuthTokensFromRequest(): AuthTokens? {
+        val authorization = rq.getHeader("Authorization")
 
-    private AuthTokens getAuthTokensFromRequest() {
-        String authorization = rq.getHeader("Authorization");
+        if (!authorization.isNullOrEmpty() && authorization.startsWith("Bearer ")) {
+            val token = authorization.removePrefix("Bearer ")
+            val tokenBits = token.split(" ", limit = 2)
 
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            String token = authorization.substring("Bearer ".length());
-            String[] tokenBits = token.split(" ", 2);
-
-            if (tokenBits.length == 2)
-                return new AuthTokens(tokenBits[0], tokenBits[1]);
+            if (tokenBits.size == 2) {
+                return AuthTokens(tokenBits[0], tokenBits[1])
+            }
         }
 
-        String apiKey = rq.getCookieValue("apiKey");
-        String accessToken = rq.getCookieValue("accessToken");
+        val apiKey = rq.getCookieValue("apiKey")
+        val accessToken = rq.getCookieValue("accessToken")
 
-        if (apiKey != null && accessToken != null)
-            return new AuthTokens(apiKey, accessToken);
-
-        return null;
+        return if (!apiKey.isNullOrEmpty() && !accessToken.isNullOrEmpty()) {
+            AuthTokens(apiKey, accessToken)
+        } else {
+            null
+        }
     }
 
-
-    private void refreshAccessToken(Member member) {
-        rq.refreshAccessToken(member);
+    private fun refreshAccessToken(member: Member) {
+        rq.refreshAccessToken(member)
     }
 
-    private Member refreshAccessTokenByApiKey(String apiKey) {
-        Optional<Member> opMemberByApiKey = memberService.findByApiKey(apiKey);
-
-        if (opMemberByApiKey.isEmpty()) {
-            return null;
-        }
-
-        Member member = opMemberByApiKey.get();
-
-        refreshAccessToken(member);
-
-        return member;
+    private fun refreshAccessTokenByApiKey(apiKey: String): Member? {
+        val member = memberService.findByApiKey(apiKey).orElse(null) ?: return null
+        refreshAccessToken(member)
+        return member
     }
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if (!request.getRequestURI().startsWith("/api/")) {
-            filterChain.doFilter(request, response);
-            return;
+    override fun doFilterInternal(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        filterChain: FilterChain
+    ) {
+        if (!request.requestURI.startsWith("/api/")) {
+            filterChain.doFilter(request, response)
+            return
         }
 
-        if (List.of("/api/v1/members/login", "/api/v1/members/logout", "/api/v1/members/join").contains(request.getRequestURI())) {
-            filterChain.doFilter(request, response);
-            return;
+        if (request.requestURI in listOf("/api/v1/members/login", "/api/v1/members/logout", "/api/v1/members/join")) {
+            filterChain.doFilter(request, response)
+            return
         }
 
-        AuthTokens authTokens = getAuthTokensFromRequest();
+        val authTokens = getAuthTokensFromRequest()
 
         if (authTokens == null) {
-            filterChain.doFilter(request, response);
-            return;
+            filterChain.doFilter(request, response)
+            return
         }
 
-        String apiKey = authTokens.apiKey;
-        String accessToken = authTokens.accessToken;
+        val (apiKey, accessToken) = authTokens
+        var member = memberService.getMemberFromAccessToken(accessToken)
 
-        Member member = memberService.getMemberFromAccessToken(accessToken);
+        if (member == null) {
+            member = refreshAccessTokenByApiKey(apiKey)
+        }
 
-        if (member == null)
-            member = refreshAccessTokenByApiKey(apiKey);
+        rq.setLogin(member)
 
-        if (member != null)
-            rq.setLogin(member);
-
-        System.out.println("member = " + member);
-
-        filterChain.doFilter(request, response);
+        filterChain.doFilter(request, response)
     }
 }
