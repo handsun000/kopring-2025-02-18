@@ -1,148 +1,135 @@
-package com.ll.domain.member.member.controller;
+package com.ll.domain.member.member.controller
 
-import com.ll.domain.member.member.dto.MemberDto;
-import com.ll.domain.member.member.entity.Member;
-import com.ll.domain.member.member.service.MemberService;
-import com.ll.global.exceptions.ServiceException;
-import com.ll.global.rq.Rq;
-import com.ll.global.rsData.RsData;
-import com.ll.standard.base.Empty;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import lombok.RequiredArgsConstructor;
-import org.springframework.lang.NonNull;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import com.ll.domain.member.member.dto.MemberDto
+import com.ll.domain.member.member.service.MemberService
+import com.ll.global.exceptions.ServiceException
+import com.ll.global.rq.Rq
+import com.ll.global.rsData.RsData
+import com.ll.standard.base.Empty
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/members")
-@RequiredArgsConstructor
 @Tag(name = "ApiV1MemberController", description = "API 회원 컨트롤러")
 @SecurityRequirement(name = "bearerAuth")
-public class ApiV1MemberController {
-    private final MemberService memberService;
-    private final Rq rq;
+class ApiV1MemberController(
+    private val memberService: MemberService,
+    private val rq: Rq,
+) {
 
-    record MemberJoinReqBody(
-            @NotBlank
-            String username,
-            @NotBlank
-            String password,
-            @NotBlank
-            String nickname
-    ) {
-    }
+    @JvmRecord
+    data class MemberJoinReqBody(
+        @field:NotBlank val username: String?,
+        @field:NotBlank val password: String?,
+        @field:NotBlank val nickname: String?,
+    )
 
     @PostMapping("/join")
     @Transactional
     @Operation(summary = "회원가입")
-    public RsData<MemberDto> join(
-            @RequestBody @Valid MemberJoinReqBody reqBody
-    ) {
-        Member member = memberService.join(reqBody.username, reqBody.password, reqBody.nickname, "");
+    fun join(
+        @RequestBody @Valid reqBody: MemberJoinReqBody?,
+    ): RsData<MemberDto> {
+        val member = memberService.join(reqBody!!.username, reqBody.password, reqBody.nickname, "")
 
-        return new RsData<>(
-                "201-1",
-                "%s님 환영합니다. 회원가입이 완료되었습니다.".formatted(member.getName()),
-                new MemberDto(member)
-        );
+        return RsData(
+            "201-1",
+            "${member.name}님 환영합니다. 회원가입이 완료되었습니다.",
+            MemberDto(member)
+        )
     }
 
 
-    record MemberLoginReqBody(
-            @NotBlank
-            String username,
-            @NotBlank
-            String password
-    ) {
-    }
+    @JvmRecord
+    data class MemberLoginReqBody(
+        @field:NotBlank val username: String?,
+        @field:NotBlank val password: String?,
+    )
 
-    record MemberLoginResBody(
-            @NonNull
-            MemberDto item,
-            @NonNull
-            String apiKey,
-            @NonNull
-            String accessToken
-    ) {
-    }
+    @JvmRecord
+    data class MemberLoginResBody(
+        val item: MemberDto,
+         val apiKey: String,
+         val accessToken: String,
+    )
 
     @PostMapping("/login")
     @Transactional(readOnly = true)
     @Operation(summary = "로그인", description = "apiKey, accessToken을 발급합니다. 해당 토큰들은 쿠키(HTTP-ONLY)로도 전달됩니다.")
-    public RsData<MemberLoginResBody> login(
-            @RequestBody @Valid MemberLoginReqBody reqBody
-    ) {
-        Member member = memberService
-                .findByUsername(reqBody.username)
-                .orElseThrow(() -> new ServiceException("401-1", "존재하지 않는 사용자입니다."));
+    fun login(
+        @RequestBody @Valid reqBody: MemberLoginReqBody?,
+    ): RsData<MemberLoginResBody> {
+        val member = memberService
+            .findByUsername(reqBody!!.username)
+            .orElseThrow { ServiceException("401-1", "존재하지 않는 사용자입니다.") }
 
-        if (!member.matchPassword(reqBody.password))
-            throw new ServiceException("401-2", "비밀번호가 일치하지 않습니다.");
+        if (!member.matchPassword(reqBody.password!!)) throw ServiceException("401-2", "비밀번호가 일치하지 않습니다.")
 
-        String accessToken = rq.makeAuthCookies(member);
+        val accessToken = rq.makeAuthCookies(member)
 
-        return new RsData<>(
-                "200-1",
-                "%s님 환영합니다.".formatted(member.getName()),
-                new MemberLoginResBody(
-                        new MemberDto(member),
-                        member.getApiKey(),
-                        accessToken
-                )
-        );
+        return RsData(
+            "200-1",
+            "%s님 환영합니다.".formatted(member.name),
+            MemberLoginResBody(
+                MemberDto(member),
+                member.apiKey,
+                accessToken
+            )
+        )
     }
 
 
     @DeleteMapping("/logout")
     @Transactional(readOnly = true)
     @Operation(summary = "로그아웃", description = "apiKey, accessToken 토큰을 제거합니다.")
-    public RsData<Empty> logout() {
-        rq.deleteCookie("accessToken");
-        rq.deleteCookie("apiKey");
+    fun logout(): RsData<Empty> {
+        rq.deleteCookie("accessToken")
+        rq.deleteCookie("apiKey")
 
-        return new RsData<>(
-                "200-1",
-                "로그아웃 되었습니다."
-        );
+        return RsData(
+            "200-1",
+            "로그아웃 되었습니다."
+        )
     }
 
 
     @GetMapping("/me")
     @Transactional(readOnly = true)
     @Operation(summary = "내 정보")
-    public MemberDto me() {
-        Member actor = memberService.findById(rq.getActor().getId()).get();
+    fun me(): MemberDto {
+        val actor = memberService.findById(rq.actor!!.id).get()
 
-        return new MemberDto(actor);
+        return MemberDto(actor)
     }
 
 
-    record MemberModifyMeReqBody(
-            @NotBlank
-            String nickname
-    ) {
-    }
+    @JvmRecord
+    data class MemberModifyMeReqBody(
+        @field:NotBlank val nickname: String?,
+    )
 
     @PutMapping("/me")
     @Transactional
     @Operation(summary = "내 정보 수정")
-    public RsData<MemberDto> modifyMe(
-            @RequestBody @Valid MemberModifyMeReqBody reqBody
-    ) {
-        Member actor = memberService.findByUsername(rq.getActor().getUsername()).get();
+    fun modifyMe(
+        @RequestBody @Valid reqBody: MemberModifyMeReqBody?,
+    ): RsData<MemberDto> {
+        val actor = memberService.findByUsername(rq.actor!!.username).get()
 
-        memberService.modify(actor, reqBody.nickname, "");
+        memberService.modify(actor, reqBody!!.nickname, "")
 
-        rq.refreshAccessToken(actor);
+        rq.refreshAccessToken(actor)
 
-        return new RsData<>(
-                "200-1",
-                "회원정보가 수정되었습니다.",
-                new MemberDto(actor)
-        );
+        return RsData(
+            "200-1",
+            "회원정보가 수정되었습니다.",
+            MemberDto(actor)
+        )
     }
 }

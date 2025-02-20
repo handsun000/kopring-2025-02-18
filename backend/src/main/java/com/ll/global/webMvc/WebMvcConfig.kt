@@ -1,15 +1,14 @@
-package com.ll.global.webMvc;
+package com.ll.global.webMvc
 
-import com.ll.global.app.AppConfig;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import com.ll.global.app.AppConfig.Companion.getGenFileDirPath
+import org.springframework.context.annotation.Configuration
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+class WebMvcConfig : WebMvcConfigurer {
+    override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
         registry.addResourceHandler("/gen/**")
-                .addResourceLocations("file:///" + AppConfig.getGenFileDirPath() + "/");
+            .addResourceLocations("file:///" + getGenFileDirPath() + "/")
     }
 }

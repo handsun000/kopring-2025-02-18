@@ -1,13 +1,13 @@
-package com.ll.global.util;
+package com.ll.global.util
 
-import org.apache.tika.Tika;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.apache.tika.Tika
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 
 @Configuration
-public class UtilConfig {
+class UtilConfig {
     @Bean
-    public Tika tika() {
-        return new Tika();
+    fun tika(): Tika {
+        return Tika()
     }
 }
