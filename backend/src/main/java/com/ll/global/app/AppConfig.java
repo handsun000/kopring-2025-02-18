@@ -35,16 +35,22 @@ public class AppConfig {
         return !isProd();
     }
 
-    @Getter
     private static ObjectMapper objectMapper;
+
+    public static ObjectMapper getObjectMapper() {
+        return objectMapper;
+    }
 
     @Autowired
     public void setObjectMapper(ObjectMapper objectMapper) {
         AppConfig.objectMapper = objectMapper;
     }
 
-    @Getter
     private static Tika tika;
+
+    public static Tika getTika() {
+        return tika;
+    }
 
     @Autowired
     public void setTika(Tika tika) {
