@@ -1,137 +1,136 @@
-package com.ll.domain.post.post.service;
+package com.ll.domain.post.post.service
 
-import com.ll.domain.member.member.entity.Member;
-import com.ll.domain.post.post.entity.Post;
-import com.ll.domain.post.post.repository.PostRepository;
-import com.ll.global.rsData.RsData;
-import com.ll.standard.search.PostSearchKeywordTypeV1;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.ll.domain.member.member.entity.Member
+import com.ll.domain.post.post.entity.Post
+import com.ll.domain.post.post.repository.PostRepository
+import com.ll.global.rsData.RsData
+import com.ll.standard.search.PostSearchKeywordTypeV1
+import lombok.RequiredArgsConstructor
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.stereotype.Service
+import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Service
 @RequiredArgsConstructor
-public class PostService {
-    private final PostRepository postRepository;
+class PostService(
+    private val postRepository: PostRepository
+) {
 
-    public long count() {
-        return postRepository.count();
+    fun count(): Long {
+        return postRepository.count()
     }
 
-    public long countByPublished(boolean published) {
-        return postRepository.countByPublished(published);
+    fun countByPublished(published: Boolean): Long {
+        return postRepository.countByPublished(published)
     }
 
-    public long countByListed(boolean listed) {
-        return postRepository.countByListed(listed);
+    fun countByListed(listed: Boolean): Long {
+        return postRepository.countByListed(listed)
     }
 
-    public Post write(Member author, String title, String content, boolean published, boolean listed) {
-        Post post = new Post(
-                author,
-                title,
-                content,
-                published,
-                listed
-        );
+    fun write(author: Member, title: String, content: String, published: Boolean, listed: Boolean): Post {
+        val post = Post(
+            author,
+            title,
+            content,
+            published,
+            listed
+        )
 
-        return postRepository.save(post);
+        return postRepository.save(post)
     }
 
-    public List<Post> findAllByOrderByIdDesc() {
-        return postRepository.findAllByOrderByIdDesc();
+    fun findAllByOrderByIdDesc(): List<Post> {
+        return postRepository.findAllByOrderByIdDesc()
     }
 
-    public Optional<Post> findById(long id) {
-        return postRepository.findById(id);
+    fun findById(id: Long): Optional<Post> {
+        return postRepository.findById(id)
     }
 
-    public void delete(Post post) {
-        postRepository.delete(post);
+    fun delete(post: Post) {
+        postRepository.delete(post)
     }
 
-    public void modify(Post post, String title, String content, boolean published, boolean listed) {
-        boolean wasTemp = post.isTemp();
+    fun modify(post: Post, title: String?, content: String?, published: Boolean, listed: Boolean) {
+        val wasTemp = post.isTemp
 
-        post.setTitle(title);
-        post.setContent(content);
-        post.setPublished(published);
-        post.setListed(listed);
+        post.title = title!!
+        post.content = content!!
+        post.published = published
+        post.listed = listed
 
-        if ( wasTemp && !post.isTemp() ) {
-            post.setCreateDateNow();
+        if (wasTemp && !post.isTemp) {
+            post.setCreateDateNow()
         }
     }
 
-    public void flush() {
-        postRepository.flush(); // em.flush(); 와 동일
+    fun flush() {
+        postRepository.flush() // em.flush(); 와 동일
     }
 
-    public Optional<Post> findLatest() {
-        return postRepository.findFirstByOrderByIdDesc();
+    fun findLatest(): Optional<Post> {
+        return postRepository.findFirstByOrderByIdDesc()
     }
 
-    public Page<Post> findByListedPaged(boolean listed, int page, int pageSize) {
-        return findByListedPaged(listed, null, null, page, pageSize);
+    fun findByListedPaged(listed: Boolean, page: Int, pageSize: Int): Page<Post> {
+        return findByListedPaged(listed, PostSearchKeywordTypeV1.all, "", page, pageSize)
     }
 
-    public Page<Post> findByListedPaged(
-            boolean listed,
-            PostSearchKeywordTypeV1 searchKeywordType,
-            String searchKeyword,
-            int page,
-            int pageSize
-    ) {
-        Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Order.desc("id")));
-        return postRepository.findByKw(searchKeywordType, searchKeyword, null, null, listed, pageable);
+    fun findByListedPaged(
+        listed: Boolean,
+        searchKeywordType: PostSearchKeywordTypeV1,
+        searchKeyword: String,
+        page: Int,
+        pageSize: Int
+    ): Page<Post> {
+        val pageable: Pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Order.desc("id")))
+        return postRepository.findByKw(searchKeywordType, searchKeyword, null, null, listed, pageable)
     }
 
-    public Page<Post> findByAuthorPaged(Member author, int page, int pageSize) {
-        return findByAuthorPaged(author, null, null, page, pageSize);
+    fun findByAuthorPaged(author: Member, page: Int, pageSize: Int): Page<Post> {
+        return findByAuthorPaged(author, PostSearchKeywordTypeV1.all, "", page, pageSize)
     }
 
-    public Page<Post> findByAuthorPaged(
-            Member author,
-            PostSearchKeywordTypeV1 searchKeywordType,
-            String searchKeyword,
-            int page,
-            int pageSize
-    ) {
-        Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Order.desc("id")));
-        return postRepository.findByKw(searchKeywordType, searchKeyword, author, null, null, pageable);
+    fun findByAuthorPaged(
+        author: Member,
+        searchKeywordType: PostSearchKeywordTypeV1,
+        searchKeyword: String,
+        page: Int,
+        pageSize: Int
+    ): Page<Post> {
+        val pageable: Pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Order.desc("id")))
+        return postRepository.findByKw(searchKeywordType, searchKeyword, author, null, null, pageable)
     }
 
-    public RsData<Post> findTempOrMake(Member author) {
-        AtomicBoolean isNew = new AtomicBoolean(false);
+    fun findTempOrMake(author: Member): RsData<Post> {
+        val isNew = AtomicBoolean(false)
 
-        Post post = postRepository.findTop1ByAuthorAndPublishedAndTitleOrderByIdDesc(
-                author,
-                false,
-                "임시글"
-        ).orElseGet(() -> {
-            isNew.set(true);
-            return write(author, "임시글", "", false, false);
-        });
+        val post = postRepository.findTop1ByAuthorAndPublishedAndTitleOrderByIdDesc(
+            author,
+            false,
+            "임시글"
+        ).orElseGet {
+            isNew.set(true)
+            write(author, "임시글", "", false, false)
+        }
 
         if (isNew.get()) {
-            return new RsData(
-                    "201-1",
-                    "%d번 임시글이 생성되었습니다.".formatted(post.getId()),
-                    post
-            );
+            return RsData(
+                "201-1",
+                "%d번 임시글이 생성되었습니다.".formatted(post.id),
+                post
+            )
         }
 
-        return new RsData(
-                "200-1",
-                "%d번 임시글을 불러옵니다.".formatted(post.getId()),
-                post
-        );
+        return RsData(
+            "200-1",
+            "%d번 임시글을 불러옵니다.".formatted(post.id),
+            post
+        )
     }
 }
