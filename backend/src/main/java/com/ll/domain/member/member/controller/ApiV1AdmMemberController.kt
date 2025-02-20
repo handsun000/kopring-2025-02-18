@@ -23,8 +23,8 @@ class ApiV1AdmMemberController(
     @Transactional(readOnly = true)
     @Operation(summary = "회원 다건 조회")
     fun items(
-        @RequestParam(defaultValue = "username") searchKeywordType: MemberSearchKeywordTypeV1?,
-        @RequestParam(defaultValue = "") searchKeyword: String?,
+        @RequestParam(defaultValue = "username") searchKeywordType: MemberSearchKeywordTypeV1,
+        @RequestParam(defaultValue = "") searchKeyword: String,
         @RequestParam(defaultValue = "1") page: Int,
         @RequestParam(defaultValue = "10") pageSize: Int
     ): PageDto<MemberWithUsernameDto> {

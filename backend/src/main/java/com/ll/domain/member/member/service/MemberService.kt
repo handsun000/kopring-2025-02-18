@@ -23,7 +23,7 @@ class MemberService(
         return memberRepository.count()
     }
 
-    fun join(username: String?, password: String?, nickname: String?, profileImgUrl: String?): Member {
+    fun join(username: String, password: String, nickname: String, profileImgUrl: String): Member {
         memberRepository
             .findByUsername(username)
             .ifPresent {
@@ -31,17 +31,17 @@ class MemberService(
             }
 
         val member = Member(
-            username!!,
-            password!!,
-            nickname!!,
+            username,
+            password,
+            nickname,
             UUID.randomUUID().toString(),
-            profileImgUrl!!
+            profileImgUrl
         )
 
         return memberRepository.save(member)
     }
 
-    fun findByUsername(username: String?): Optional<Member> {
+    fun findByUsername(username: String): Optional<Member> {
         return memberRepository.findByUsername(username)
     }
 
@@ -49,7 +49,7 @@ class MemberService(
         return memberRepository.findById(authorId)
     }
 
-    fun findByApiKey(apiKey: String?): Optional<Member> {
+    fun findByApiKey(apiKey: String): Optional<Member> {
         return memberRepository.findByApiKey(apiKey)
     }
 
@@ -74,8 +74,8 @@ class MemberService(
     }
 
     fun findByPaged(
-        searchKeywordType: MemberSearchKeywordTypeV1?,
-        searchKeyword: String?,
+        searchKeywordType: MemberSearchKeywordTypeV1,
+        searchKeyword: String,
         page: Int,
         pageSize: Int,
     ): Page<Member> {
@@ -85,7 +85,7 @@ class MemberService(
     }
 
     fun findByPaged(page: Int, pageSize: Int): Page<Member> {
-        return findByPaged(null, null, page, pageSize)
+        return findByPaged(MemberSearchKeywordTypeV1.all, "", page, pageSize)
     }
 
     fun modify(member: Member, nickname: String?, profileImgUrl: String?) {
@@ -93,7 +93,7 @@ class MemberService(
         member.profileImgUrl = profileImgUrl!!
     }
 
-    fun modifyOrJoin(username: String?, nickname: String?, profileImgUrl: String?): Member {
+    fun modifyOrJoin(username: String, nickname: String, profileImgUrl: String): Member {
         val opMember = findByUsername(username)
 
         if (opMember.isPresent) {

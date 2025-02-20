@@ -25,18 +25,18 @@ class ApiV1MemberController(
 
     @JvmRecord
     data class MemberJoinReqBody(
-        @field:NotBlank val username: String?,
-        @field:NotBlank val password: String?,
-        @field:NotBlank val nickname: String?,
+        @field:NotBlank val username: String,
+        @field:NotBlank val password: String,
+        @field:NotBlank val nickname: String,
     )
 
     @PostMapping("/join")
     @Transactional
     @Operation(summary = "회원가입")
     fun join(
-        @RequestBody @Valid reqBody: MemberJoinReqBody?,
+        @RequestBody @Valid reqBody: MemberJoinReqBody,
     ): RsData<MemberDto> {
-        val member = memberService.join(reqBody!!.username, reqBody.password, reqBody.nickname, "")
+        val member = memberService.join(reqBody.username, reqBody.password, reqBody.nickname, "")
 
         return RsData(
             "201-1",
@@ -48,8 +48,8 @@ class ApiV1MemberController(
 
     @JvmRecord
     data class MemberLoginReqBody(
-        @field:NotBlank val username: String?,
-        @field:NotBlank val password: String?,
+        @field:NotBlank val username: String,
+        @field:NotBlank val password: String,
     )
 
     @JvmRecord
@@ -63,13 +63,13 @@ class ApiV1MemberController(
     @Transactional(readOnly = true)
     @Operation(summary = "로그인", description = "apiKey, accessToken을 발급합니다. 해당 토큰들은 쿠키(HTTP-ONLY)로도 전달됩니다.")
     fun login(
-        @RequestBody @Valid reqBody: MemberLoginReqBody?,
+        @RequestBody @Valid reqBody: MemberLoginReqBody,
     ): RsData<MemberLoginResBody> {
         val member = memberService
-            .findByUsername(reqBody!!.username)
+            .findByUsername(reqBody.username)
             .orElseThrow { ServiceException("401-1", "존재하지 않는 사용자입니다.") }
 
-        if (!member.matchPassword(reqBody.password!!)) throw ServiceException("401-2", "비밀번호가 일치하지 않습니다.")
+        if (!member.matchPassword(reqBody.password)) throw ServiceException("401-2", "비밀번호가 일치하지 않습니다.")
 
         val accessToken = rq.makeAuthCookies(member)
 

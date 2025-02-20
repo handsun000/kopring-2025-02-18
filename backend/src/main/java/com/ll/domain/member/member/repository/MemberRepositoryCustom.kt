@@ -1,10 +1,11 @@
-package com.ll.domain.member.member.repository;
 
-import com.ll.domain.member.member.entity.Member;
-import com.ll.standard.search.MemberSearchKeywordTypeV1;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+package com.ll.domain.member.member.repository
 
-public interface MemberRepositoryCustom {
-    Page<Member> findByKw(MemberSearchKeywordTypeV1 kwType, String kw, Pageable pageable);
+import com.ll.domain.member.member.entity.Member
+import com.ll.standard.search.MemberSearchKeywordTypeV1
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+
+interface MemberRepositoryCustom {
+    fun findByKw(kwType: MemberSearchKeywordTypeV1, kw: String, pageable: Pageable): Page<Member>
 }
