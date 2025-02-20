@@ -10,8 +10,8 @@ abstract class BaseEntity {
     @Column(name = "id")
     var _id: Long? = null
 
-    val id:Long
-        get() = _id ?:0
+    val id: Long
+        get() = _id ?: 0
 
     val modelName: String
         get() = Ut.str.lcfirst(javaClass.simpleName!!)
@@ -20,11 +20,10 @@ abstract class BaseEntity {
         if (this === other) return true
         if (other == null || javaClass != other.javaClass) return false
         other as BaseEntity
-        if (id == null || other.id == null) return false
         return id == other.id
     }
 
     override fun hashCode(): Int {
-        return id?.hashCode() ?: System.identityHashCode(this)
+        return _id?.hashCode() ?: 0
     }
 }

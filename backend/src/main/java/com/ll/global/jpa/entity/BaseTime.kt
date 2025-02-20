@@ -1,4 +1,4 @@
-package com.ll.global.jpa.entity;
+package com.ll.global.jpa.entity
 
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.MappedSuperclass
